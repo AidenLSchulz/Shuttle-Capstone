@@ -55,6 +55,8 @@ namespace MidStateShuttleService.Controllers
                 FirstTime = model.FirstTime,
                 LocationId = model.LocationId,
                 IsActive = model.IsActive,
+                StudentId = model.StudentId,
+                DropOffLocationId = model.DropOffLocationId,
                 LocationOptions = locationOptions
                 // CentralDateTime will auto-convert from UtcDate via getter in ViewModel
             };

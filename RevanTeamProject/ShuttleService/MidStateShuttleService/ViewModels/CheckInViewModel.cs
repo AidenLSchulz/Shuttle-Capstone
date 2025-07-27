@@ -19,9 +19,16 @@ namespace MidStateShuttleService.ViewModels
 
         public bool FirstTime { get; set; }
 
+        /// <summary>
+        /// This is pick up location id
+        /// </summary>
         public int LocationId { get; set; }
 
         public bool IsActive { get; set; }
+
+        public string? StudentId { get; set; }
+
+        public int DropOffLocationId { get; set; }
 
         public IEnumerable<SelectListItem> LocationOptions { get; set; } = new List<SelectListItem>();
 
