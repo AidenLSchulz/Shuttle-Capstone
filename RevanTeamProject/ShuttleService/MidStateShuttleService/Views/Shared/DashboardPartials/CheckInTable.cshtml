@@ -23,6 +23,7 @@
             <td>Name</td>
             <td>Date</td>
             <td>Pick Up Location</td>
+            <td>Drop Off Location</td>
             <td>Comments</td>
             <td>First Time?</td>
             <td>Actions</td>
@@ -42,8 +43,8 @@
                     <tr class="checkRow">
                         <td>@checkIn.Name</td>
                         <td>@checkIn.Date.ToString("MM/dd/yyyy hh:mm tt")</td>
-
-                        <td>@checkIn.Location.CheckInName()</td>
+                        <td>@checkIn.Location.CheckInName()</td> @* pick up location *@
+                        <td>@checkIn.DropOffLocation.CheckInName()</td> @* drop off location *@
                         @if (@checkIn.Comments != null)
                         {
                             <td>@checkIn.Comments</td>

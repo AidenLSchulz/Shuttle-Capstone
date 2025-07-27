@@ -25,11 +25,27 @@ public partial class CheckIn
 
     public bool FirstTime { get; set; }
 
+    /// <summary>
+    /// This is pick up location id
+    /// </summary>
     public int LocationId { get; set; }
 
     public bool IsActive { get; set; }
 
+    [StringLength(25)]
+    public string? StudentId { get; set; }
+
+    public int DropOffLocationId { get; set; }
+
+    /// <summary>
+    /// This is the pick up location resolved in the check in service
+    /// </summary>
     [ForeignKey("LocationId")]
     public virtual Location Location { get; set; }
 
+    /// <summary>
+    /// Drop off location resolved in the check in service.
+    /// </summary>
+    [ForeignKey("DropOffLocationId")]
+    public virtual Location DropOffLocation { get; set; }
 }

@@ -8,11 +8,16 @@
         <form asp-controller="CheckIn" asp-action="EditCheckIn" method="post" class="form form-1">
             <div class="form-body">
                 <h2 class="title">Edit Shuttle Check-in</h2>
-                
 
                 <div class="input-fields">
-                    <h6>Please Enter Your Name</h6>
-                    <input asp-for="Name" type="text" class="form-control input--style-1" id="name" placeholder="Your Name" required />
+                    <h6>Student ID</h6>
+                    <input asp-for="StudentId" type="text" class="form-control input--style-1" id="studentid" placeholder="student id" />
+                    <div class="div-line"></div>
+                </div>                
+
+                <div class="input-fields">
+                    <h6>Name</h6>
+                    <input asp-for="Name" type="text" class="form-control input--style-1" id="name" placeholder="name" required />
                     <div class="div-line"></div>
                     <div class="invalid-feedback">
                         Please enter a valid name.
@@ -37,7 +42,24 @@
 
                     <div class="col-6">
                         <div class="input-fields">
-                            <h6>Is this your first time riding?</h6>
+                            <h6>Drop-off Location</h6>
+                            <select asp-for="DropOffLocationId"
+                                    asp-items="Model.LocationOptions"
+                                    class="form-control input--style-1" required>
+                                <option selected="selected" value="" required>--Select--</option>
+                            </select>
+                            <div class="div-line"></div>
+                            <div class="invalid-feedback">
+                                Please select a drop-off location
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row row-space">
+                    <div class="col-6">
+                        <div class="input-fields">
+                            <h6>First time rider</h6>
                             <div class="form-control input--style-radio-group">
                                 <input asp-for="FirstTime" type="radio" value="true" class="form-check-input radio-style input--style-1" id="newRiderYes" required />
                                 <label class="radio-label-style" for="newRiderYes">Yes</label>
@@ -50,11 +72,11 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>                
 
                 <!-- Adding in the time -->
                 <div class="input-fields">
-                    <p class="typetrip">Check-in Date</p>
+                    <h6 class="typetrip">Check-in Date</h6>
 
                     <input asp-for="CentralDateTime" type="datetime-local" 
                         class="form-control input--style-1" 
