@@ -43,7 +43,7 @@ namespace MidStateShuttleService
                 options.Cookie.IsEssential = true;
             });
 
-            builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration);
+            // builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration);
             builder.Services.AddMvc(options =>
             {
                 var policy = new AuthorizationPolicyBuilder()
@@ -51,8 +51,7 @@ namespace MidStateShuttleService
                     .Build();
 
                 options.Filters.Add(new AuthorizeFilter(policy));
-            }).AddMicrosoftIdentityUI();
-
+            });//.AddMicrosoftIdentityUI();
 
 
             var app = builder.Build();
