@@ -8,7 +8,6 @@ on:
 env:
   AZURE_WEBAPP_NAME: Shuttle-Staging
   DOTNET_VERSION: "8.0.x"
-  PROJECT_PATH: "MidStateShuttleService/MidStateShuttleService.csproj"
 
 jobs:
   build-and-deploy:
@@ -22,6 +21,21 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Find csproj path
+        id: findproj
+        shell: bash
+        run: |
+          echo "Looking for MidStateShuttleService.csproj..."
+          PROJ=$(find . -name "MidStateShuttleService.csproj" | head -n 1)
+          if [ -z "$PROJ" ]; then
+            echo "ERROR: MidStateShuttleService.csproj not found"
+            echo "Here are all csproj files:"
+            find . -name "*.csproj"
+            exit 1
+          fi
+          echo "Found: $PROJ"
+          echo "PROJECT_PATH=$PROJ" >> $GITHUB_ENV
 
       - name: Restore
         run: dotnet restore "${{ env.PROJECT_PATH }}"
