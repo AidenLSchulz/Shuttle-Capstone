@@ -231,6 +231,6 @@ RevanTeamProject/Documentation/SprintPowerPoint/~$Sprint6.pptx
 RevanTeamProject/Documentation/SprintPowerPoint/~$SprintFinal.pptx
 
 # configs
-RevanTeamProject/ShuttleService/MidStateShuttleService/appsettings.json
+# RevanTeamProject/ShuttleService/MidStateShuttleService/appsettings.json
 RevanTeamProject/ShuttleService/MidStateShuttleService/appsettings.Development.json
 # RevanTeamProject/ShuttleService/MidStateShuttleService/Services/EmailServices.cs
