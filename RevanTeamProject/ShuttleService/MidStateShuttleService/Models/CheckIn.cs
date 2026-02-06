@@ -35,7 +35,7 @@ public partial class CheckIn
     [StringLength(25)]
     public string? StudentId { get; set; }
 
-    public int DropOffLocationId { get; set; }
+    public int? DropOffLocationId { get; set; }
 
     /// <summary>
     /// This is the pick up location resolved in the check in service
@@ -47,5 +47,5 @@ public partial class CheckIn
     /// Drop off location resolved in the check in service.
     /// </summary>
     [ForeignKey("DropOffLocationId")]
-    public virtual Location DropOffLocation { get; set; }
+    public virtual Location? DropOffLocation { get; set; }
 }

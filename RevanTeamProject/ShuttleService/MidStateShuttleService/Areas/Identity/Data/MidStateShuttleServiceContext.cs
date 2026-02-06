@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MidStateShuttleService.Data;
-
+/*
 public class MidStateShuttleServiceContext : IdentityDbContext<IdentityUser>
 {
     public MidStateShuttleServiceContext(DbContextOptions<MidStateShuttleServiceContext> options)
@@ -19,3 +19,4 @@ public class MidStateShuttleServiceContext : IdentityDbContext<IdentityUser>
         // Add your customizations after calling base.OnModelCreating(builder);
     }
 }
+*/

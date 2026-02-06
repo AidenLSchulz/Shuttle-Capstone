@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MidStateShuttleService.Models;
@@ -34,6 +36,8 @@ public partial class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        base.OnModelCreating(modelBuilder);
         // Bus table
         modelBuilder.Entity<Bus>(entity =>
         {

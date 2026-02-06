@@ -33,10 +33,16 @@
                         <a class="nav-item nav-link" asp-area="" asp-controller="CheckIn" asp-action="CheckIn">Check-in</a>
                         <a class="nav-item nav-link" asp-area="" asp-controller="Communicate" asp-action="StudentCommunicate">Message</a>
                         
-                        
+                        <!-- Dashboard Button for Admins/Drivers -->
+                        @if (User.Identity?.IsAuthenticated ?? false && 
+                        (User.IsInRole("Admin") || User.IsInRole("Driver")))
+                        {
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>                            
+                        }
+
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            <a class="nav-item nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+
                             // User is signed in, display Signout link
                             <a class="nav-item nav-link" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="Signout">Signout</a>
                         }

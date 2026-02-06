@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -6,6 +7,7 @@ using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using MidStateShuttleService.Data;
 using MidStateShuttleService.Models;
+using MidStateShuttleService.Roles;
 using MidStateShuttleService.Service;
 
 namespace MidStateShuttleService
@@ -20,10 +22,11 @@ namespace MidStateShuttleService
             //Host connectionstring
             //var appConnectionString = builder.Configuration.GetConnectionString("Connection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-            builder.Services.AddDbContext<MidStateShuttleServiceContext>(options => options.UseSqlServer(appConnectionString));
+            //builder.Services.AddDbContext<MidStateShuttleServiceContext>(options => options.UseSqlServer(appConnectionString));
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(appConnectionString));
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<MidStateShuttleServiceContext>();
+            builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+            .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
             builder.Services.AddSingleton<IListService, ListServices>();
 
@@ -51,8 +54,7 @@ namespace MidStateShuttleService
                     .Build();
 
                 options.Filters.Add(new AuthorizeFilter(policy));
-            });//.AddMicrosoftIdentityUI();
-
+            }).AddMicrosoftIdentityUI();
 
             var app = builder.Build();
 
