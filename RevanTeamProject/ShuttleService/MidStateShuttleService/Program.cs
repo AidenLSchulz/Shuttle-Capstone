@@ -7,6 +7,7 @@ using Microsoft.Identity.Web.UI;
 using MidStateShuttleService.Data;
 using MidStateShuttleService.Models;
 using MidStateShuttleService.Service;
+using MidStateShuttleService.Services;
 
 namespace MidStateShuttleService
 {
@@ -26,6 +27,8 @@ namespace MidStateShuttleService
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<MidStateShuttleServiceContext>();
 
             builder.Services.AddSingleton<IListService, ListServices>();
+
+            builder.Services.AddScoped<EmailServices>();
 
             builder.Services.ConfigureApplicationCookie(options =>
             {
