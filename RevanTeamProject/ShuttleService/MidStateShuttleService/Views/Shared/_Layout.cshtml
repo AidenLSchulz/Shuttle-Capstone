@@ -1,4 +1,4 @@
-﻿<!-- index.cshtml or your layout file -->
+<!-- index.cshtml or your layout file -->
 @{
    
 }
@@ -32,18 +32,29 @@
                         <a class="nav-item nav-link" asp-area="" asp-controller="Register" asp-action="Register">Request a Ride</a>
                         <a class="nav-item nav-link" asp-area="" asp-controller="CheckIn" asp-action="CheckIn">Check-in</a>
                         <a class="nav-item nav-link" asp-area="" asp-controller="Communicate" asp-action="StudentCommunicate">Message</a>
-                        
-                        
-                        @if (User.Identity?.IsAuthenticated ?? false)
+                       
+
+                        @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <a class="nav-item nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            // User is signed in, display Signout link
-                            <a class="nav-item nav-link" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="Signout">Signout</a>
+
+                            <a class="nav-item nav-link" asp-area="" asp-controller="User" asp-action="Account">Account</a>
+                            
+                            if (User.IsInRole("Admin") || User.IsInRole("Driver"))
+                            {
+                                <a class="nav-item nav-link" asp-controller="Dashboard" asp-action="Index">
+                                    Dashboard
+                                </a>
+                            }
+
+                            <a class="nav-item nav-link" asp-controller="Auth" asp-action="Logout">
+                                Sign Out
+                            </a>
                         }
                         else
-                        {                            
-                            // User is not signed in, display Sign In link
-                            <a class="nav-item nav-link" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="Signin">Sign In</a>
+                        {
+                            <a class="nav-item nav-link" asp-controller="Auth" asp-action="Login">
+                                Sign In
+                            </a>
                         }
                     </div>
                 </div>

@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
-using MidStateShuttleService.Data;
 using MidStateShuttleService.Models;
 using MidStateShuttleService.Service;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 
 namespace MidStateShuttleService
 {
@@ -20,10 +21,7 @@ namespace MidStateShuttleService
             //Host connectionstring
             //var appConnectionString = builder.Configuration.GetConnectionString("Connection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-            builder.Services.AddDbContext<MidStateShuttleServiceContext>(options => options.UseSqlServer(appConnectionString));
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(appConnectionString));
-
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<MidStateShuttleServiceContext>();
 
             builder.Services.AddSingleton<IListService, ListServices>();
 
@@ -32,27 +30,24 @@ namespace MidStateShuttleService
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
 
-            // Add services to the container.
-            builder.Services.AddRazorPages();
-
             // Add session services to the container
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // You can adjust the timeout as needed
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
 
-            // builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration);
-            builder.Services.AddMvc(options =>
-            {
-                var policy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
+            builder.Services.AddControllersWithViews();
 
-                options.Filters.Add(new AuthorizeFilter(policy));
-            });//.AddMicrosoftIdentityUI();
+            builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+            .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
+
+            builder.Services.AddAuthorization();
+
+            builder.Services.AddRazorPages()
+                .AddMicrosoftIdentityUI();
 
             var app = builder.Build();
 

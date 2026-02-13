@@ -15,6 +15,9 @@
     "mssql3": {
       "type": "mssql",
       "connectionId": "ConnectionStrings:MidStateShuttleServiceContextConnection"
+    },
+    "identityapp1": {
+      "type": "identityapp"
     }
   }
 }

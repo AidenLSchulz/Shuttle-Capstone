@@ -1,0 +1,61 @@
+﻿@model MidStateShuttleService.Models.User
+
+@{
+    ViewBag.Title = "Edit Account";
+}
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="/css/Register.css" />
+<link rel="stylesheet" href="/css/TextInputField.css" />
+<link rel="stylesheet" href="/css/HelpIcon.css" />
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<body>
+    <div class="wrapper wrapper--w680">
+        <div class="form form-1">
+            <div class="form-body">
+                <h2 class="title">Edit Account</h2>
+
+                @using (Html.BeginForm("AccountSetup", "User", FormMethod.Post, new { @id = "accountSetupForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="input-fields">
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.FirstName)
+                            @Html.EditorFor(m => m.FirstName, new { htmlAttributes = new { @class = "input--style-1", placeholder = "First Name" } })
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.LastName)
+                            @Html.EditorFor(m => m.LastName, new { htmlAttributes = new { @class = "input--style-1", placeholder = "Last Name" } })
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.StudentId)
+                            @Html.EditorFor(m => m.StudentId, new { htmlAttributes = new { @class = "input--style-1", placeholder = "Student ID" } })
+                            @Html.ValidationMessageFor(m => m.StudentId, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhoneNumber)
+                            @Html.EditorFor(m => m.PhoneNumber, new { htmlAttributes = new { @class = "input--style-1", placeholder = "Phone Number" } })
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="p-t-20">
+                        <button class="btn btn--radius btn--submit" type="submit">Save Changes</button>
+                        <button class="btn btn--radius btn--cancel" type="button" onclick="location.href='/'">Cancel</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</body>
