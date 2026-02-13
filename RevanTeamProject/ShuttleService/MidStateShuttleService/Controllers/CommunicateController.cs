@@ -14,15 +14,18 @@ namespace MidStateShuttleService.Controllers
 {
     public class CommunicateController : Controller
     {
+        private readonly EmailServices _emailServices;
+
         private readonly ILogger<CommunicateController> _logger;
 
         private readonly ApplicationDbContext _context;
 
         // Inject ApplicationDbContext into the controller constructor
-        public CommunicateController(ApplicationDbContext context, ILogger<CommunicateController> logger)
+        public CommunicateController(ApplicationDbContext context, ILogger<CommunicateController> logger, EmailServices emailServices)
         {
             _context = context; // Assign the injected ApplicationDbContext to the _context field
             _logger = logger; // Assign the injected ILogger to the _logger field
+            _emailServices = emailServices;
         }
 
         [HttpGet]
@@ -50,13 +53,12 @@ namespace MidStateShuttleService.Controllers
 
                     RegisterServices rs = new RegisterServices(_context);
 
-                    EmailServices es = new EmailServices();
-
                     var registeredStudents = rs.GetEmailsByRoute(c.SelectedRouteDetail.ToString());
 
                     foreach (var student in registeredStudents)
                     {
-                        es.SendEmail(student.Email, "Mid State Shuttle Service Update", c.message);
+                        _emailServices.SendEmail(student.Email, "Mid State Shuttle Service Update", c.message);
+
                     }
 
                     HttpContext.Session.SetString("CommunicationSuccess", "true"); // Using session to set Communication success.

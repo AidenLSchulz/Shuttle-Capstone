@@ -13,14 +13,17 @@ namespace MidStateShuttleService.Controllers
 {
     public class RegisterController : Controller
     {
+        private readonly EmailServices _emailServices;
+
         private readonly ApplicationDbContext _context;
 
         private readonly ILogger<RegisterController> _logger;
 
         // Inject ApplicationDbContext into the controller constructor
-        public RegisterController(ApplicationDbContext context)
+        public RegisterController(ApplicationDbContext context, EmailServices emailServices)
         {
             _context = context; // Assign the injected ApplicationDbContext to the _context field
+            _emailServices = emailServices;
         }
 
         private List<SelectListItem> GetSchoolTermSelectList()
@@ -84,7 +87,7 @@ namespace MidStateShuttleService.Controllers
         {
             LocationServices ls = new LocationServices(_context);
             RegisterServices rs = new RegisterServices(_context);
-            EmailServices es = new EmailServices();
+            
 
             // Repopulate LocationNames for the model in case of return to View due to invalid model state or any error.
             model.LocationNames = ls.GetLocationNames();
@@ -119,7 +122,8 @@ namespace MidStateShuttleService.Controllers
                     TempData["RegistrationSuccess"] = true;
 
                     string emailBody = GenerateRegistrationEmailBody(model);
-                    es.SendEmail(model.Email, "MSTC Shuttle Service Request", emailBody, isHtml: true);
+                    _emailServices.SendEmail(model.Email, "MSTC Shuttle Service Request", emailBody, isHtml: true);
+
 
                     return RedirectToAction("Index");
                 }

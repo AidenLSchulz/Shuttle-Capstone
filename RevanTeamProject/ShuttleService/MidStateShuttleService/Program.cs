@@ -8,6 +8,7 @@ using MidStateShuttleService.Service;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using MidStateShuttleService.Services;
 
 namespace MidStateShuttleService
 {
@@ -24,6 +25,8 @@ namespace MidStateShuttleService
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(appConnectionString));
 
             builder.Services.AddSingleton<IListService, ListServices>();
+
+            builder.Services.AddScoped<EmailServices>();
 
             builder.Services.ConfigureApplicationCookie(options =>
             {

@@ -1,15 +1,35 @@
-﻿namespace MidStateShuttleService.Services
+﻿using System.Net;
+using System.Net.Mail;
+
+namespace MidStateShuttleService.Services
 {
     public class EmailServices
     {
-        public void SendEmail(string email, string subject, string body)
-        {
+        private readonly IConfiguration _config;
 
+        public EmailServices(IConfiguration config)
+        {
+            _config = config;
         }
-
-        public void SendEmail(string email, string subject, string body, bool isHtml)
+        public void SendEmail(string recipient, string subject, string body, bool isHtml = false)
         {
+            // Establish SMTP2GO Client
+            SmtpClient client = new SmtpClient("mail.smtp2go.com")
+            {
+                Port = 2525, // SMTP2GO port number
+                Credentials = new NetworkCredential(_config["Email:Username"],_config["Email:Password"]),
+                EnableSsl = true // SMTP2GO requires SSL
+            };
 
+            MailMessage message = new MailMessage("shuttle@mstc.edu", recipient)
+            {
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = isHtml
+            };
+
+            // Send the email asynchronously
+            client.SendMailAsync(message);
         }
     }
 }
