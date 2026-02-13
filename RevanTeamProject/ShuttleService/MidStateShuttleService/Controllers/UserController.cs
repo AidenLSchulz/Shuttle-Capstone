@@ -17,10 +17,13 @@ namespace MidStateShuttleService.Controllers
 
         public IActionResult PostLoginCheck()
         {
-            var oid = User.FindFirst("oid")?.Value;
+            var oidClaim = User.FindFirst("oid")
+                           ?? User.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
+
+            string userId = oidClaim?.Value;
 
             var existingUser = _context.Users
-                .FirstOrDefault(u => u.AzureAdObjectId == oid);
+                .FirstOrDefault(u => u.AzureAdObjectId == userId);
 
             if (existingUser == null)
             {
