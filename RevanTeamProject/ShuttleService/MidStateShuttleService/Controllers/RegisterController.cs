@@ -20,10 +20,11 @@ namespace MidStateShuttleService.Controllers
         private readonly ILogger<RegisterController> _logger;
 
         // Inject ApplicationDbContext into the controller constructor
-        public RegisterController(ApplicationDbContext context, EmailServices emailServices)
+        public RegisterController(ApplicationDbContext context, EmailServices emailServices, ILogger<RegisterController> logger)
         {
             _context = context; // Assign the injected ApplicationDbContext to the _context field
             _emailServices = emailServices;
+            _logger = logger;
         }
 
         private List<SelectListItem> GetSchoolTermSelectList()
@@ -254,7 +255,7 @@ namespace MidStateShuttleService.Controllers
             }
             catch (Exception ex)
             {
-                LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context); // Log SQL exception
+                //LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context); // Log SQL exception
                 _logger.LogError(ex, "An error occurred while updating student.");
                 ModelState.AddModelError("", "An unexpected error occurred, please try again.");
 
@@ -288,7 +289,7 @@ namespace MidStateShuttleService.Controllers
             catch (Exception ex)
             {
                 // Log the exception
-                LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
+                //LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
                 _logger.LogError(ex, "An error occurred while toggling IsActive of the student.");
 
                 // Optionally add a model error for displaying an error message to the user
@@ -368,7 +369,7 @@ namespace MidStateShuttleService.Controllers
             catch (Exception ex)
             {
                 // Log the exception
-                LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
+                //LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
                 _logger.LogError(ex, "An error occurred while generating request email body.");
                 return "An error occurred while generating request email body.";
             }            
