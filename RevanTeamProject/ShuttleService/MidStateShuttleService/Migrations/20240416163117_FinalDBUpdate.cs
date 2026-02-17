@@ -129,7 +129,7 @@ namespace MidStateShuttleService.Migrations
                 column: "LocationId",
                 principalTable: "Location",
                 principalColumn: "LocationId",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.NoAction);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Routes_Driver_DriverId",

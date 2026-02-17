@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using System.Diagnostics;
 
 namespace MidStateShuttleService.Controllers
 {
+    [Authorize(Roles = "Admin,Driver")]
     public class DashboardController : Controller
     {
         private readonly ILogger<DashboardController> _logger;

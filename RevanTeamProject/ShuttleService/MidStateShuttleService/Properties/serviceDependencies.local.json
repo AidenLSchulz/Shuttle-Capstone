@@ -9,6 +9,10 @@
     "mssql3": {
       "type": "mssql.local",
       "connectionId": "ConnectionStrings:MidStateShuttleServiceContextConnection"
+    },
+    "identityapp1": {
+      "connectionInfo": "App registration: shuttle-service-midstate, Tenant: MSTC Labs (mstclabs.mstc.edu - Microsoft Entra ID)",
+      "type": "identityapp.default"
     }
   }
 }
