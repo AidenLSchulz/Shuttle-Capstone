@@ -8,6 +8,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations;
+using Azure.Core;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace MidStateShuttleService.Controllers
 {
@@ -47,13 +50,21 @@ namespace MidStateShuttleService.Controllers
                 .GetName() ?? enumValue.ToString();
         }
 
-        [AllowAnonymous]
+        /// <summary>
+        /// Index is the form to create a registration.
+        /// </summary>
+        /// <returns></returns>
+        [Authorize]
         public IActionResult Index()
         {
             LocationServices ls = new LocationServices(_context);
 
             var model = new RegisterModel();
             model.LocationNames = ls.GetLocationNames();
+
+            //set trip type up for now, its a legacy feature
+            model.TripType = "N/A";
+
             ViewBag.Terms = GetSchoolTermSelectList();
             return View(model);
         }
@@ -67,18 +78,6 @@ namespace MidStateShuttleService.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        public ActionResult Register()
-        {
-            LocationServices ls = new LocationServices(_context);
-
-            var model = new RegisterModel();
-            model.LocationNames = ls.GetLocationNames();
-            ViewBag.Terms = GetSchoolTermSelectList();
-            return View("Index", model);
         }
 
         //Completed the backend logic for a registration form submission
@@ -95,21 +94,22 @@ namespace MidStateShuttleService.Controllers
 
             if (ModelState.IsValid)
             {
+                var oidClaim = User.FindFirst("oid")
+                ?? User.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
+
+                string userId = oidClaim?.Value;
+
+                var dbUser = _context.Users
+                .FirstOrDefault(u => u.AzureAdObjectId == userId);
+
                 model.IsActive = true; // Set IsActive to true
                 model.DeviceIpAddress = model.DeviceIpAddress ?? "Unknown"; // Default to "Unknown" if IP is null
                 model.InsertDateTime = DateTime.Now;
 
-                // Use LocationServices to fetch the location names based on the foreign keys
-                if (model.FridayPickUpLocationID != null)
+                if (dbUser != null)
                 {
-                    var pickupLocationName = ls.getLocationNameById(model.FridayPickUpLocationID.Value);
-                    var dropoffLocationName = ls.getLocationNameById(model.FridayDropOffLocationID.Value);
+                    model.UserId = dbUser.Id;
                 }
-                else
-                {
-                    var pickupLocationName = ls.getLocationNameById(model.PickUpLocationID.Value);
-                    var dropoffLocationName = ls.getLocationNameById(model.DropOffLocationID.Value);
-                }                
 
                 if (rs.AddEntity(model))
                 {
@@ -123,7 +123,7 @@ namespace MidStateShuttleService.Controllers
                     TempData["RegistrationSuccess"] = true;
 
                     string emailBody = GenerateRegistrationEmailBody(model);
-                    _emailServices.SendEmail(model.Email, "MSTC Shuttle Service Request", emailBody, isHtml: true);
+                    //_emailServices.SendEmail(model.Email, "MSTC Shuttle Service Request", emailBody, isHtml: true);
 
 
                     return RedirectToAction("Index");
@@ -139,6 +139,18 @@ namespace MidStateShuttleService.Controllers
             return View("Index", model);
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public ActionResult SpecialRequest()
+        {
+            LocationServices ls = new LocationServices(_context);
+
+            var model = new RegisterModel();
+            model.isCustom = true;
+            model.LocationNames = ls.GetLocationNames();
+            ViewBag.Terms = GetSchoolTermSelectList();
+            return View("SpecialRequest", model);
+        }
 
         [AllowAnonymous]
         public ActionResult RegisterConfirmation(RegisterModel model)
@@ -352,18 +364,7 @@ namespace MidStateShuttleService.Controllers
                     actionResult = GetRoutes(model.PickUpLocationID.Value, model.DropOffLocationID.Value);
                     initialRoute = this.ParseInitialResult(actionResult, initialRoute);
 
-                    return BuildEmailConfirmationBody(
-                        model.Term.ToString(),
-                        model.StudentId,
-                        model.FirstName,
-                        model.LastName,
-                        model.IsAdult,
-                        model.Email,
-                        model.PhoneNumber,
-                        initialRoute,
-                        model.TripType,
-                        model.SelectedDaysOfWeek,
-                        model.FirstDayExpectingToRide);
+                    return "";
                 }
             }
             catch (Exception ex)
@@ -438,18 +439,7 @@ namespace MidStateShuttleService.Controllers
 
             initialRoute = ParseInitialResult(finalList, initialRoute);
 
-            return BuildEmailConfirmationBody(
-                model.Term.Value.ToString(),
-                model.StudentId,
-                model.FirstName,
-                model.LastName,
-                model.IsAdult,
-                model.Email,
-                model.PhoneNumber,
-                initialRoute,
-                model.TripType,
-                model.SelectedDaysOfWeek,
-                model.FirstDayExpectingToRide);
+            return "";
         }
 
         private JsonResult GetRouteInfo(int pickUpLocationId, int dropOffLocationId)

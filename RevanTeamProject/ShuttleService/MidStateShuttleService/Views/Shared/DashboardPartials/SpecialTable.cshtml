@@ -26,9 +26,6 @@
 <table>
     <thead>
         <tr>
-            <td>Name</td>
-            <td>Phone Number</td>
-            <td>Email</td>
             <td>Pick up time</td>
             <td>Drop off time</td>
             <td>Details</td>
@@ -47,9 +44,6 @@
                 @if (registration.SpecialRequest == true)
                 {
                     <tr class="registrationRow">
-                        <td>@(registration.FirstName) @(registration.LastName)</td>
-                        <td>@registration.PhoneNumber</td>
-                        <td>@registration.Email</td>
                         @if (!string.IsNullOrEmpty(registration.WhichFriday))
                         {
                             <td>@registration.FridayMustArriveTime</td>

@@ -1,0 +1,149 @@
+﻿@using MidStateShuttleService.Enums
+@model MidStateShuttleService.Models.RegisterModel
+
+@{
+    ViewBag.Title = "Shuttle Service Special Request";
+}
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="/css/Form.css" />
+<link rel="stylesheet" href="/css/Input.css" />
+<link rel="stylesheet" href="/css/HelpIcon.css" />
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<body>
+<div class="form-container">
+    <div class="form-paper">
+
+            <!-- Special Request -->
+            <section class="form-section special-request">
+                <p><strong>Please note: Personal home addresses or private residences cannot be used as pick-up or drop-off locations</strong><br /><br /></p>
+                <p><strong>Need to go back to the Non-Special Request Form?</strong></p>
+                <a class="btn-midstate btn-primary"
+                   asp-area=""
+                   asp-controller="Register"
+                   asp-action="SpecialRequest">
+                   Click Here to Go Back 
+                </a>
+            </section>
+
+        <h2 class="title">Request a Special Request</h2>
+
+        @using (Html.BeginForm("Request", "Request", FormMethod.Post, new { id = "requestForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="DeviceIpAddress" name="DeviceIpAddress" />
+
+            <!-- TERM -->
+            <div class="form-group">
+                @Html.LabelFor(m => m.Term, "School Term")
+                <span class="help-icon" data-help="Select the current school term.">?</span>
+                @Html.DropDownListFor(m => m.Term,
+                                     (IEnumerable<SelectListItem>)ViewBag.Terms,
+                                     "Select Term",
+                                     new { @class = "dropdown-midstate", required = "required" })
+            </div>
+
+            <!-- TRIP TYPE -->
+            <div class="form-group">
+                <label>Trip Type</label>
+                <span class="help-icon" data-help="Choose One-Way for a single ride or Round Trip to schedule a return ride.">?</span>
+                <div class="radio-options">
+                    <div class="radiobtn-midstate">
+                        @Html.RadioButtonFor(m => m.TripType, "RoundTrip", new { id = "RoundTrip" })
+                        <label for="RoundTrip">Round Trip</label>
+                    </div>
+                    <div class="radiobtn-midstate">
+                        @Html.RadioButtonFor(m => m.TripType, "OneWay", new { id = "OneWay" })
+                        <label for="OneWay">One Way</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PICKUP / DROPOFF -->
+            <div class="row row-space">
+                <div class="col-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.customPickupLocation, "Pick-Up Location")
+                        <span class="help-icon" data-help="Enter the exact address or location where you need to be picked up.">?</span>
+                        @Html.TextBoxFor(m => m.customPickupLocation,
+                                     new { @class = "midstate-textinput", placeholder = "Enter pick-up location" })
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.customDropoffLocation, "Drop-Off Location")
+                        <span class="help-icon" data-help="Enter the destination address or location.">?</span>
+                        @Html.TextBoxFor(m => m.customDropoffLocation,
+                                     new { @class = "midstate-textinput", placeholder = "Enter drop-off location" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATE -->
+            <div class="form-group">
+                @Html.LabelFor(m => m.customDate, "Pickup Date")
+                <span class="help-icon" data-help="Select the starting date for this request.">?</span>
+                @Html.TextBoxFor(m => m.customDate,
+                                 "{0:yyyy-MM-dd}",
+                                 new { @class = "midstate-date", type = "date" })
+            </div>
+
+            <!-- TIMES -->
+            <div class="row row-space">
+                <div class="col-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.customTime1, "First Ride Time")
+                        <span class="help-icon" data-help="Enter the pickup time for your first ride.">?</span>
+                        @Html.TextBoxFor(m => m.customTime1,
+                                     "{0:HH\\:mm}",
+                                     new { @class = "midstate-textinput", type = "time" })
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.customTime2, "Return Ride Time")
+                        <span class="help-icon" data-help="Required only if Round Trip is selected.">?</span>
+                        @Html.TextBoxFor(m => m.customTime2,
+                                     "{0:HH\\:mm}",
+                                     new { @class = "midstate-textinput", type = "time" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTES -->
+            <div class="form-group">
+                @Html.LabelFor(m => m.customMessage, "Additional Notes")
+                <span class="help-icon" data-help="Include any special instructions for the shuttle crew.">?</span>
+                @Html.TextAreaFor(m => m.customMessage,
+                                 5, 50,
+                                 new { @class = "midstate-textinput", placeholder = "Enter additional details..." })
+            </div>
+
+            <!-- TERMS -->
+            <div class="form-group terms-group">
+                <div class="checkbox-midstate">
+                    <input asp-for="AgreeTerms" type="checkbox" id="AgreeTerms" name="AgreeTerms" value="true" />
+                    <label for="AgreeTerms">
+                        I understand my transportation request will be reviewed but is not guaranteed.
+                    </label>
+                </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="form-group submit-group">
+                <button class="btn-midstate btn-primary" type="submit">Submit</button>
+                <button class="btn-midstate btn-secondary" type="button" onclick="location.href='/Request/Request'">Cancel</button>
+            </div>
+        }
+    </div>
+</div>
+</div>
+
+<script src="/js/helpicon.js"></script>
+</body>

@@ -29,7 +29,18 @@
                 <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                     <div class="navbar-nav">
                         <a class="nav-item nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        <a class="nav-item nav-link" asp-area="" asp-controller="Register" asp-action="Register">Request a Ride</a>
+
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a class="nav-item nav-link" asp-area="" asp-controller="Register" asp-action="Index">Request Service</a>
+                        }
+                        else
+                        {
+                            <a class="nav-item nav-link" asp-controller="Auth" asp-action="Login">
+                                Request Service
+                            </a>
+                        }
+
                         <a class="nav-item nav-link" asp-area="" asp-controller="CheckIn" asp-action="CheckIn">Check-in</a>
                         <a class="nav-item nav-link" asp-area="" asp-controller="Communicate" asp-action="StudentCommunicate">Message</a>
                        

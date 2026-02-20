@@ -40,8 +40,10 @@
                 }
                 else
                 {
+                    
                     @foreach (var registration in Model.OrderBy(r => r.FirstDayExpectingToRide))
                     {
+                        /*
                         <tr class="passengerRow" data-days="@string.Join(",", registration.SelectedDaysOfWeek)">
                             <td>@(registration.FirstName) @(registration.LastName)</td>
                             <td>@registration.PhoneNumber</td>
@@ -52,6 +54,7 @@
                             <td class="print-hide"><a asp-controller="Register" asp-action="Edit" asp-route-id="@registration.RegistrationId">Edit</a></td>
                             <td class="print-hide"><a asp-controller="Register" asp-action="Delete" asp-route-id="@registration.RegistrationId">Delete</a></td>
                         </tr>
+                        */
                     }
                 }
             </tbody>

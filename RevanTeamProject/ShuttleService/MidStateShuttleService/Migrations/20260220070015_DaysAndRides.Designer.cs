@@ -4,6 +4,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MidStateShuttleService.Models;
 
@@ -12,9 +13,11 @@ using MidStateShuttleService.Models;
 namespace MidStateShuttleService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260220070015_DaysAndRides")]
+    partial class DaysAndRides
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -351,8 +354,20 @@ namespace MidStateShuttleService.Migrations
                     b.Property<DateTime?>("EditDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateOnly?>("FirstDayExpectingToRide")
                         .HasColumnType("date");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasAnnotation("ErrorMessage", "Must contain only characters and be at least 2 characters long")
+                        .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$");
 
                     b.Property<bool?>("FridayAgreeTerms")
                         .IsRequired()
@@ -385,12 +400,26 @@ namespace MidStateShuttleService.Migrations
                     b.Property<bool>("IsAdult")
                         .HasColumnType("bit");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasAnnotation("ErrorMessage", "Must contain only characters and be at least 2 characters long")
+                        .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$");
+
                     b.Property<TimeOnly?>("MustArriveTime")
                         .HasColumnType("time");
 
                     b.Property<string>("NeedTransportation")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasAnnotation("ErrorMessage", "Must be 10 digits")
+                        .HasAnnotation("RegularExpression", "^[0-9]{10}$");
 
                     b.Property<int?>("PickUpLocationID")
                         .HasColumnType("int");
@@ -423,6 +452,7 @@ namespace MidStateShuttleService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TripType")
+                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 

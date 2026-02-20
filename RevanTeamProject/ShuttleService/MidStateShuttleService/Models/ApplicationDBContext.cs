@@ -34,6 +34,10 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<RequestDay> RequestDays { get; set; }
+
+    public virtual DbSet<Ride> Rides { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Bus table
@@ -368,30 +372,7 @@ public partial class ApplicationDbContext : DbContext
                 .ValueGeneratedOnAdd()
                 .IsRequired();
 
-            entity.Property(e => e.FirstName)
-                .IsRequired()
-                .HasMaxLength(255)
-                .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$")
-                .HasAnnotation("ErrorMessage", "Must contain only characters and be at least 2 characters long");
-
-            entity.Property(e => e.LastName)
-                .IsRequired()
-                .HasMaxLength(255)
-                .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$")
-                .HasAnnotation("ErrorMessage", "Must contain only characters and be at least 2 characters long");
-
-            entity.Property(e => e.PhoneNumber)
-                .IsRequired()
-                .HasMaxLength(255)
-                .HasAnnotation("RegularExpression", "^[0-9]{10}$")
-                .HasAnnotation("ErrorMessage", "Must be 10 digits");
-
-            entity.Property(e => e.Email)
-                .IsRequired()
-                .HasMaxLength(100);
-
             entity.Property(e => e.TripType)
-                .IsRequired()
                 .HasMaxLength(10);
 
             entity.Property(e => e.PickUpLocationID);

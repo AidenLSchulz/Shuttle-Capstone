@@ -1,0 +1,72 @@
+﻿/* Center the form like a piece of paper */
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 50px 20px;
+    background-color: #f5f6fa;
+    min-height: 100vh;
+}
+
+/* Paper style */
+.form-paper {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 700px;
+}
+
+/* Each section separated nicely */
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+    /* Remove border from last section */
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    /* Section titles */
+    .form-section h2, .form-section h5 {
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: 600;
+    }
+
+    /* Lists spacing */
+    .form-section ul {
+        padding-left: 20px;
+    }
+
+/* Buttons */
+.btn-special-request {
+    margin-top: 10px;
+}
+
+/* Radio groups */
+.radio-group p {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* Terms label spacing */
+.terms-group label {
+    margin-left: 10px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* Submit buttons spacing */
+.submit-group button {
+    margin-right: 10px;
+}
+
+.minicard-midstate{
+    margin: 1em;
+}

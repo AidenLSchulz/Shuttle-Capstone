@@ -57,7 +57,7 @@ namespace MidStateShuttleService.Controllers
 
                     foreach (var student in registeredStudents)
                     {
-                        _emailServices.SendEmail(student.Email, "Mid State Shuttle Service Update", c.message);
+                        //_emailServices.SendEmail(student.Email, "Mid State Shuttle Service Update", c.message);
 
                     }
 

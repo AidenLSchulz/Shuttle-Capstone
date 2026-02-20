@@ -1,0 +1,213 @@
+﻿.btn-midstate {
+    line-height: 36px;
+    display: inline-block;
+    padding: 0 16px;
+    cursor: pointer;
+    color: #840029; /* Maroon color for text */
+    font-size: 12px;
+    font-weight: 700;
+    border: 2px solid #840029; /* Initial border thickness */
+    background-color: transparent; /* Transparent background */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 5px;
+    border-radius: 25px; /* Rounded corners */
+    transition: all 0.1s ease-out; /* Smooth transition for all properties */
+    animation: none;
+}
+
+/* Checkbox MidState - works with long labels */
+.checkbox-midstate {
+    display: flex;
+    align-items: flex-start; /* Align checkbox at top of text */
+    margin-bottom: 15px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+    /* Hide native checkbox */
+    .checkbox-midstate input[type="checkbox"] {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+
+    /* Custom box */
+    .checkbox-midstate label {
+        position: relative;
+        padding-left: 30px; /* space for the custom checkbox */
+        color: #333;
+        user-select: none;
+        display: block;
+    }
+
+        /* Create the box */
+        .checkbox-midstate label::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #840029; /* Maroon border */
+            border-radius: 6px; /* Rounded corners */
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+
+    /* Checked state */
+    .checkbox-midstate input[type="checkbox"]:checked + label::before {
+        background-color: #840029;
+        border-color: #840029;
+    }
+
+    /* Checkmark */
+    .checkbox-midstate label::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 6px;
+        height: 12px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        opacity: 0;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-midstate input[type="checkbox"]:checked + label::after {
+        opacity: 1;
+    }
+
+/* Dropdown MidState */
+.dropdown-midstate {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 2px solid #840029;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 7px;
+}
+
+    .dropdown-midstate:focus {
+        outline: none;
+        border-color: #5a001f; /* Darker maroon on focus */
+        box-shadow: 0 0 3px rgba(132, 0, 41, 0.4);
+    }
+
+/* Radio Button MidState */
+.radiobtn-midstate {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+}
+
+    /* Hide default radio input */
+    .radiobtn-midstate input[type="radio"] {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+
+    /* Custom radio circle */
+    .radiobtn-midstate label {
+        position: relative;
+        padding-left: 30px; /* space for the custom circle */
+        color: #333;
+        display: block;
+    }
+
+        /* Circle base */
+        .radiobtn-midstate label::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #840029; /* Maroon border */
+            border-radius: 50%; /* round */
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+
+    /* Circle fill when checked */
+    .radiobtn-midstate input[type="radio"]:checked + label::before {
+        background-color: #840029;
+        border-color: #840029;
+    }
+
+    /* Inner dot */
+    .radiobtn-midstate label::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0;
+        transition: all 0.2s ease;
+    }
+
+    .radiobtn-midstate input[type="radio"]:checked + label::after {
+        opacity: 1;
+    }
+
+/* MidState Text Input */
+.midstate-textinput {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #333;
+    border: 2px solid #840029; /* Maroon border */
+    border-radius: 8px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+    .midstate-textinput:focus {
+        outline: none;
+        border-color: #5a001f; /* Darker maroon on focus */
+        box-shadow: 0 0 3px rgba(132, 0, 41, 0.4);
+    }
+
+/* MidState Date Picker */
+.midstate-date {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #333;
+    border: 2px solid #840029; /* Maroon border */
+    border-radius: 8px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .midstate-date::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        filter: invert(18%) sepia(96%) saturate(5277%) hue-rotate(340deg) brightness(92%) contrast(87%);
+    }
+
+    .midstate-date:focus {
+        outline: none;
+        border-color: #5a001f; /* Darker maroon */
+        box-shadow: 0 0 3px rgba(132, 0, 41, 0.4);
+    }

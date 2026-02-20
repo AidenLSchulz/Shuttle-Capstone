@@ -15,7 +15,6 @@
 <table>
     <thead>
         <tr>
-            <td>Name</td>
             <td>Date</td>
             <td>Pick up location</td>
             <td>Drop off location</td>
@@ -36,7 +35,6 @@
             @foreach (var registration in Model.Register.OrderByDescending(r => r.RegistrationId))
             {
                 <tr class="registrationRow">
-                    <td>@(registration.FirstName) @(registration.LastName)</td>
                     <td>@registration.FirstDayExpectingToRide</td>
                     <td>@registration.PickUpLocationID</td>
                     @if (!string.IsNullOrEmpty(registration.WhichFriday))

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using MidStateShuttleService.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -27,28 +28,8 @@ namespace MidStateShuttleService.Models
         [Key]
         public int RegistrationId { get; set; }
 
-        [Required(ErrorMessage = "First Name is required")]
-        [RegularExpression("^[A-Za-z\\s'-]+$", ErrorMessage = "Must contain only letters, spaces, dashes, or apostrophes.")]
-        [StringLength(20)]
-        public string FirstName { get; set; }
-
-        [Required(ErrorMessage = "Last Name is required")]
-        [RegularExpression("^[A-Za-z\\s'-]+$", ErrorMessage = "Must contain only letters, spaces, dashes, or apostrophes.")]
-        [StringLength(20)]
-        public string LastName { get; set; }
-
-        [Required(ErrorMessage = "Phone Number is required")]
-        [RegularExpression("^[0-9]{10}$", ErrorMessage = "Must be 10 digits")]
         [StringLength(10)]
-        public string PhoneNumber { get; set; }
-
-        [Required(ErrorMessage = "Email is required")]
-        [StringLength(40)]
-        public string Email { get; set; }
-
-        [Required(ErrorMessage = "Trip Type is required")]
-        [StringLength(10)]
-        public string TripType { get; set; }// This could be a dropdown in the UI linked to Types available
+        public string? TripType { get; set; }// This could be a dropdown in the UI linked to Types available
 
         //[Required(ErrorMessage = "Pick Up Location is required")]
         //public string PickUpLocation { get; set; }
@@ -136,6 +117,47 @@ namespace MidStateShuttleService.Models
 
         [Required(ErrorMessage = "Term is required.")]
         public SchoolTerm? Term { get; set; }
+
+        /// <summary>
+        /// Bool Variable for if the Ride is a "Special Request"
+        /// </summary>
+        public bool isCustom { get; set; }
+
+        /// <summary>
+        /// The name of the location for the rider to be picked up from if the rider is making a special request
+        /// </summary>
+        public string? customPickupLocation { get; set; }
+
+        /// <summary>
+        /// The name of the location for the rider to be dropped off from if the rider is making a special request
+        /// </summary>
+        public string? customDropoffLocation { get; set; }
+
+        /// <summary>
+        /// Special Field So Riders Creating a special request can enter any additional details
+        /// </summary>
+        public string? customMessage { get; set; }
+
+        /// <summary>
+        /// The date that the rider is going to be picked up from
+        /// </summary>
+        public DateOnly? customDate { get; set; }
+
+        /// <summary>
+        /// The time that the rider needs to be picked up at (if not a round trip this is the only one set)
+        /// </summary>
+        public TimeOnly? customTime1 { get; set; }
+
+        /// <summary>
+        /// The time that the rider needs to be picked up at during their second ride of a round trip
+        /// </summary>
+        public TimeOnly? customTime2 { get; set; }
+
+        public User? User { get; set; }
+
+        public int UserId { get; set; }
+
+        public List<RequestDay> DaySchedules { get; set; } = new();
     }
 
 }
