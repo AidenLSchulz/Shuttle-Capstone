@@ -237,10 +237,17 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(b => b.IsActive)
                 .HasDefaultValue(false);
 
+            // Pick-up location FK (LocationId) - prevent cascade paths
             entity.HasOne(e => e.Location)
                 .WithMany()
-                .IsRequired()
-                .HasForeignKey(e => e.LocationId);
+                .HasForeignKey(e => e.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Drop-off location FK (DropOffLocationId) - prevent cascade paths
+            entity.HasOne(e => e.DropOffLocation)
+                .WithMany()
+                .HasForeignKey(e => e.DropOffLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Feedback Table
