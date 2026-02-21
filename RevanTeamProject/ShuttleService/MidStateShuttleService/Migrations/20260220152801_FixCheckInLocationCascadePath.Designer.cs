@@ -4,6 +4,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MidStateShuttleService.Models;
 
@@ -12,9 +13,11 @@ using MidStateShuttleService.Models;
 namespace MidStateShuttleService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260220152801_FixCheckInLocationCascadePath")]
+    partial class FixCheckInLocationCascadePath
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -348,6 +351,11 @@ namespace MidStateShuttleService.Migrations
                     b.Property<DateTime?>("EditDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateOnly?>("FirstDayExpectingToRide")
                         .HasColumnType("date");
 
@@ -359,8 +367,6 @@ namespace MidStateShuttleService.Migrations
                         .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$");
 
                     b.Property<bool>("FridayAgreeTerms")
-                    b.Property<bool?>("FridayAgreeTerms")
-                        .IsRequired()
                         .HasColumnType("bit");
 
                     b.Property<TimeOnly?>("FridayCanLeaveTime")
@@ -390,12 +396,26 @@ namespace MidStateShuttleService.Migrations
                     b.Property<bool>("IsAdult")
                         .HasColumnType("bit");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasAnnotation("ErrorMessage", "Must contain only characters and be at least 2 characters long")
+                        .HasAnnotation("RegularExpression", "^[A-Za-z\\s]{2,}$");
+
                     b.Property<TimeOnly?>("MustArriveTime")
                         .HasColumnType("time");
 
                     b.Property<string>("NeedTransportation")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasAnnotation("ErrorMessage", "Must be 10 digits")
+                        .HasAnnotation("RegularExpression", "^[0-9]{10}$");
 
                     b.Property<int?>("PickUpLocationID")
                         .HasColumnType("int");
@@ -427,36 +447,13 @@ namespace MidStateShuttleService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TripType")
+                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
 
                     b.Property<string>("WhichFriday")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
-
-                    b.Property<DateOnly?>("customDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("customDropoffLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("customMessage")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("customPickupLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<TimeOnly?>("customTime1")
-                        .HasColumnType("time");
-
-                    b.Property<TimeOnly?>("customTime2")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("isCustom")
-                        .HasColumnType("bit");
 
                     b.HasKey("RegistrationId");
 
@@ -467,8 +464,6 @@ namespace MidStateShuttleService.Migrations
                     b.HasIndex("FridayPickUpLocationID");
 
                     b.HasIndex("PickUpLocationID");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Registration", (string)null);
                 });
@@ -563,54 +558,6 @@ namespace MidStateShuttleService.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("RequestDay", b =>
-                {
-                    b.Property<int>("RequestDayId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestDayId"));
-
-                    b.Property<int>("RegistrationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WeekDay")
-                        .HasColumnType("int");
-
-                    b.HasKey("RequestDayId");
-
-                    b.HasIndex("RegistrationId");
-
-                    b.ToTable("RequestDay");
-                });
-
-            modelBuilder.Entity("Ride", b =>
-                {
-                    b.Property<int>("RideId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RideId"));
-
-                    b.Property<int>("DropOffLocationID")
-                        .HasColumnType("int");
-
-                    b.Property<TimeOnly>("DropOffTime")
-                        .HasColumnType("time");
-
-                    b.Property<int>("PickUpLocationID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RequestDayId")
-                        .HasColumnType("int");
-
-                    b.HasKey("RideId");
-
-                    b.HasIndex("RequestDayId");
-
-                    b.ToTable("Ride");
-                });
-
             modelBuilder.Entity("MidStateShuttleService.Models.Bus", b =>
                 {
                     b.HasOne("MidStateShuttleService.Models.Driver", "Driver")
@@ -681,14 +628,6 @@ namespace MidStateShuttleService.Migrations
                         .HasForeignKey("PickUpLocationID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("FK_Registration_PickUpLocation");
-
-                    b.HasOne("MidStateShuttleService.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MidStateShuttleService.Models.Routes", b =>
@@ -716,38 +655,6 @@ namespace MidStateShuttleService.Migrations
                     b.Navigation("DropOffLocation");
 
                     b.Navigation("PickUpLocation");
-                });
-
-            modelBuilder.Entity("RequestDay", b =>
-                {
-                    b.HasOne("MidStateShuttleService.Models.RegisterModel", "Registration")
-                        .WithMany("DaySchedules")
-                        .HasForeignKey("RegistrationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Registration");
-                });
-
-            modelBuilder.Entity("Ride", b =>
-                {
-                    b.HasOne("RequestDay", "RequestDay")
-                        .WithMany("Rides")
-                        .HasForeignKey("RequestDayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RequestDay");
-                });
-
-            modelBuilder.Entity("MidStateShuttleService.Models.RegisterModel", b =>
-                {
-                    b.Navigation("DaySchedules");
-                });
-
-            modelBuilder.Entity("RequestDay", b =>
-                {
-                    b.Navigation("Rides");
                 });
 #pragma warning restore 612, 618
         }
