@@ -834,3 +834,19 @@ footer {
                 color: #840029 !important;
                 text-decoration: none !important;
             }
+
+         /*for admin dashboard notifications*/
+.notification-container {
+    position: relative;
+}
+
+.dropdown-menu.notifications {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    left: auto !important;
+    min-width: 220px;
+    max-width: 280px;
+    z-index: 9999;
+    transform: none !important;
+}

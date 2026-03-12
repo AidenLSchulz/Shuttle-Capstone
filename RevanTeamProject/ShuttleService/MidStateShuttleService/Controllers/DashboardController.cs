@@ -237,28 +237,42 @@ namespace MidStateShuttleService.Controllers
         }
 
         // ==========================================================
-        // REPORTS PARTIAL LOADER (Admin Only)
+        // REPORTS LOADER (Admin Only)
         // - Called when admin clicks "Run" inside the dashboard widget
-        // - Returns ONLY the partial (no layout, no <link> tags)
         // - ALL TIME data
         // ==========================================================
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
+        [Authorize(Roles = "Admin")] // DEV NOTE: Only users with the Admin role can access this endpoint
+        [HttpGet] // DEV NOTE: This method responds to HTTP GET requests
         public async Task<IActionResult> ReportsPartial(string report = "")
         {
+            // DEV NOTE:
+            // AllModels is a container object used by the dashboard views.
+            // It allows us to pass multiple datasets to a view in one model.
             var allModels = new AllModels();
 
+            // DEV NOTE:
+            // The "report" query string determines which dataset should be loaded.
+            // Example URL: /Dashboard/ReportsPartial?report=requests
             if (string.Equals(report, "requests", StringComparison.OrdinalIgnoreCase))
             {
+                // DEV NOTE:
+                // Query the RegisterModels table for rider request records.
+                // AsNoTracking improves performance because we are only reading data,
+                // not editing or saving it back to the database.
                 allModels.Register = await _context.RegisterModels
                     .AsNoTracking()
-                    .OrderByDescending(r => r.InsertDateTime)
+                    .OrderByDescending(r => r.InsertDateTime) // DEV NOTE: Show newest requests first
                     .ToListAsync();
 
+                // DEV NOTE:
+                // The view checks ViewBag.ReportType to decide which table layout to render.
                 ViewBag.ReportType = "requests";
             }
             else if (string.Equals(report, "checkins", StringComparison.OrdinalIgnoreCase))
             {
+                // DEV NOTE:
+                // Load rider check-in activity logs.
+                // Include() loads related tables so the view can show the actual location names.
                 allModels.CheckIn = await _context.CheckIns
                     .AsNoTracking()
                     .Include(c => c.Location)
@@ -266,7 +280,9 @@ namespace MidStateShuttleService.Controllers
                     .OrderByDescending(c => c.Date)
                     .ToListAsync();
 
-                // Convert UTC -> Central for display consistency
+                // DEV NOTE:
+                // Dates are stored in UTC in the database.
+                // We convert them to Central time before displaying to users.
                 if (allModels.CheckIn != null)
                 {
                     foreach (var checkIn in allModels.CheckIn)
@@ -277,10 +293,15 @@ namespace MidStateShuttleService.Controllers
             }
             else
             {
+                // DEV NOTE:
+                // If no report type is selected yet, the view will only show the report picker UI.
                 ViewBag.ReportType = "";
             }
 
-            // IMPORTANT: return the PARTIAL view here
+            // DEV NOTE:
+            // IMPORTANT: PartialView returns only the HTML for the table content.
+            // It does NOT load the page layout or CSS again.
+            // This allows the dashboard widget to dynamically swap report tables.
             return PartialView("~/Views/Shared/DashboardPartials/ReportsTable.cshtml", allModels);
         }
 
@@ -291,13 +312,14 @@ namespace MidStateShuttleService.Controllers
         // - Full page view with Layout + CSS
         // - ALL TIME data
         // ==========================================================
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")] // DEV NOTE: Admin-only access control
         [HttpGet]
         public async Task<IActionResult> Reports(string report = "")
         {
             // DEV NOTE:
             // Main reports page action.
-            // Uses the "report" query string to decide which dataset to load.
+            // This loads the full reports page including layout, CSS, and navigation.
+            // It uses the same logic as ReportsPartial, but returns a full view instead.
             var allModels = new AllModels();
 
             if (string.Equals(report, "requests", StringComparison.OrdinalIgnoreCase))
@@ -342,7 +364,9 @@ namespace MidStateShuttleService.Controllers
                 ViewBag.ReportType = "";
             }
 
-            // IMPORTANT: this is the FULL page view
+            // DEV NOTE:
+            // This returns the FULL Razor page.
+            // The page includes the layout, navigation bar, stylesheets, and scripts.
             return View("~/Views/Dashboard/Reports.cshtml", allModels);
         }
 
@@ -351,12 +375,13 @@ namespace MidStateShuttleService.Controllers
         // ==========================================================
         // EXPORT RIDER REQUESTS (CSV) - Admin Only, ALL TIME
         // ==========================================================
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")] // DEV NOTE: Protects data export so only admins can download it
         [HttpGet]
         public async Task<IActionResult> ExportRiderRequestsCsv()
         {
             // DEV NOTE:
-            // Pull only the fields needed for CSV export.
+            // Pull only the fields needed for CSV export instead of loading the entire entity.
+            // This improves performance and avoids unnecessary data retrieval.
             var rows = await _context.RegisterModels
                 .AsNoTracking()
                 .OrderByDescending(r => r.InsertDateTime)
@@ -378,14 +403,19 @@ namespace MidStateShuttleService.Controllers
                 .ToListAsync();
 
             // DEV NOTE:
-            // Build CSV content manually with a StringBuilder.
+            // StringBuilder is used because repeatedly concatenating strings
+            // is inefficient for large datasets.
             var sb = new System.Text.StringBuilder();
+
+            // DEV NOTE:
+            // First line defines the CSV column headers.
             sb.AppendLine("RegistrationId,Name,StudentId,Email,Phone,IsAdult,RequestType,IsFieldTrip,IsInternalInquiry,InsertDateTime,IsArchived");
 
             foreach (var r in rows)
             {
                 // DEV NOTE:
-                // Csv(...) safely escapes text values that may contain commas, quotes, or line breaks.
+                // Each row is converted into a CSV formatted line.
+                // Csv() and CsvExcelText() prevent formatting issues in Excel.
                 sb.AppendLine(
                     $"{r.RegistrationId}," +
                     $"{Csv(r.Name)}," +
@@ -401,21 +431,21 @@ namespace MidStateShuttleService.Controllers
                 );
             }
 
-
-
             // DEV NOTE:
-            // Return the CSV as a downloadable file.
+            // Return the CSV as a downloadable file response.
+            // The browser will prompt the user to download it.
             return File(
                 System.Text.Encoding.UTF8.GetBytes(sb.ToString()),
                 "text/csv",
                 $"rider-requests-ALLTIME-{DateTime.Now:yyyyMMdd-HHmm}.csv"
             );
-
-
         }
+
+
         // DEV NOTE:
         // Excel likes to auto-format long numeric-looking values like phone numbers
-        // and student IDs into scientific notation. This forces Excel to keep them as text.
+        // and student IDs into scientific notation (ex: 1.23E+10).
+        // This forces Excel to treat the value as text instead.
         private static string CsvExcelText(string? value)
         {
             value ??= "";
@@ -433,7 +463,8 @@ namespace MidStateShuttleService.Controllers
         public async Task<IActionResult> ExportCheckInsCsv()
         {
             // DEV NOTE:
-            // Pull only the fields needed for check-in CSV export.
+            // Load check-in records and include related location data
+            // so the CSV can display human-readable location names.
             var rows = await _context.CheckIns
                 .AsNoTracking()
                 .OrderByDescending(c => c.Date)
@@ -453,6 +484,9 @@ namespace MidStateShuttleService.Controllers
                 .ToListAsync();
 
             var sb = new System.Text.StringBuilder();
+
+            // DEV NOTE:
+            // CSV header row defining column order
             sb.AppendLine("CheckInId,Name,StudentId,DateCentral,FirstTime,PickUpLocation,DropOffLocation,Comments");
 
             foreach (var c in rows)
@@ -473,6 +507,8 @@ namespace MidStateShuttleService.Controllers
                 );
             }
 
+            // DEV NOTE:
+            // Return CSV file response for download
             return File(
                 System.Text.Encoding.UTF8.GetBytes(sb.ToString()),
                 "text/csv",
@@ -500,9 +536,11 @@ namespace MidStateShuttleService.Controllers
                 value.Contains('\r');
 
             // DEV NOTE:
-            // Escape quotes by doubling them.
+            // Escape quotes by doubling them according to CSV standard.
             value = value.Replace("\"", "\"\"");
 
+            // DEV NOTE:
+            // Wrap value in quotes only when required.
             return mustQuote ? $"\"{value}\"" : value;
         }
 

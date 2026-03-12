@@ -138,7 +138,15 @@
                     <i class="bi bi-bell"></i>
                 </div>
                 <div class="dropdown-menu notifications dropdown-menu-arrow" id="notificationBellDropdown" style="display: none;">
-                     <!-- Notifications go here -->
+
+                    <a href="#" class="dropdown-item notification-link" data-section-target="request">
+                        View Rider Requests
+                    </a>
+
+                    <a href="#" class="dropdown-item notification-link" data-section-target="check">
+                        View Check-ins
+                    </a>
+
                 </div>
             </div>
             <div class="notification-container">
@@ -151,7 +159,15 @@
                 </div>
 
                 <div class="dropdown-menu notifications dropdown-menu-arrow" id="notificationMessageDropdown" style="display: none;">
-                    <!-- Notifications go here -->
+
+                    <a href="#" class="dropdown-item notification-link" data-section-target="message">
+                        View Messages
+                    </a>
+
+                    <a href="#" class="dropdown-item notification-link" data-section-target="feedback">
+                        View Testimonials
+                    </a>
+
                 </div>
 
             </div>
@@ -159,7 +175,7 @@
     </div>
     <!--Cards-->
     <div class="cardBox">
-        <div class="card">
+        <div class="card" data-section-target="request">
             <div>
                 <div class="numbers">@ViewData["PastWeekRegistrations"].ToString()</div>
                 <div class="cardName">Weekly Requests</div>
@@ -168,16 +184,18 @@
                 <i class="bi bi-clipboard2-check"></i>
             </div>
         </div>
-        <div class="card">
+
+        <div class="card" data-section-target="check">
             <div>
-                <div class="numbers"> @totalCheckInsLast30Days</div>
+                <div class="numbers">@totalCheckInsLast30Days</div>
                 <div class="cardName">Monthly Checkins</div>
             </div>
             <div class="icon">
                 <i class="bi bi-clipboard2-check"></i>
             </div>
         </div>
-        <div class="card">
+
+        <div class="card" data-section-target="check">
             <div>
                 <div class="numbers">@totalCheckIns</div>
                 <div class="cardName">Total Checkins</div>
@@ -186,18 +204,18 @@
                 <i class="bi bi-clipboard2-check"></i>
             </div>
         </div>
-        <div class="card">
+
+        <div class="card" data-section-target="request">
             <div>
                 <div class="numbers">@totalRiders</div>
-                <div class="cardName">Total Riders</div>
+                <div class="cardName">Open Requests</div>
             </div>
             <div class="icon">
                 <i class="bi bi-bus-front"></i>
             </div>
         </div>
-        <!--Sections-->
-
     </div>
+
     <div class="details">
 
         <div class="recentFeedback messages">
@@ -325,4 +343,6 @@
 <script src="/js/Dashboard/notification.js"></script>
 <script src="/js/dashboard/Table.js"></script>
 <script src="/js/SearchFunc/RouteSearch.js"></script>
+
+<script src="/js/Dashboard/dashboard-cards.js"></script>
 
