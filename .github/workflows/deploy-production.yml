@@ -38,13 +38,13 @@ jobs:
           echo "PROJECT_PATH=$PROJ" >> $GITHUB_ENV
 
       - name: Restore
-        run: dotnet restore "${{ env.PROJECT_PATH }}"
+        run: dotnet restore "${{ env.PROJECT_PATH }}" --runtime linux-x64
 
       - name: Build
-        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release --no-restore
+        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release --no-restore --runtime linux-x64
 
       - name: Publish
-        run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish
+        run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --runtime linux-x64 --self-contained true --output ./publish
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
