@@ -22,8 +22,6 @@ namespace MidStateShuttleService.Models
 
         public IEnumerable<CheckIn> CheckIn { get; set; }
 
-        public IEnumerable<Feedback> Feedback { get; set; }
-
         public IEnumerable<MailItem> MailItems { get; set; }
     }
 }

@@ -84,9 +84,6 @@ namespace MidStateShuttleService.Controllers
             if (notification == null)
                 return RedirectToAction("Index", "Dashboard");
 
-            if (notification.FeedbackId.HasValue && notification.FeedbackId.Value != 0)
-                return RedirectToAction("ViewAll", "Feedback");
-
             if (notification.MessageId.HasValue && notification.MessageId.Value != 0)
                 return RedirectToAction("ViewAll", "Communicate");
 

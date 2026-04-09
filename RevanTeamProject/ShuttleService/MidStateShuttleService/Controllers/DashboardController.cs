@@ -116,44 +116,6 @@ namespace MidStateShuttleService.Controllers
             // Return a partial view with the message details
             return PartialView("_MessageDetails", message);
         }
-        
-        // Accept and reject feedback methods
-        public async Task<IActionResult> AcceptFeedback(int id)
-        {
-            var feedback = await _context.Feedbacks.FindAsync(id);
-            if (feedback != null)
-            {
-                feedback.IsActive = true;
-                await _context.SaveChangesAsync();
-            }
-            return RedirectToAction("Index");
-        }
-
-        public async Task<IActionResult> RejectFeedback(int id)
-        {
-            try
-            {
-                var feedback = await _context.Feedbacks.FindAsync(id);
-                if (feedback != null)
-                {
-                    feedback.IsActive = false;  // Set feedback as inactive
-                    await _context.SaveChangesAsync();
-                }
-                return RedirectToAction("Index", "Dashboard");
-            }
-            catch (Exception ex)
-            {
-                // Log the SQL exception and any other exceptions
-                LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
-                _logger.LogError(ex, "An error occurred while deleting a testimonial.");
-
-                // Optionally add a model error for displaying an error message to the user
-                ModelState.AddModelError("", "An unexpected error occurred while deleting the testimonial, please try again.");
-
-                // Return the view with an error message
-                return View();
-            }
-        }
 
         // Add a function to explicitly reload the page when feedback is clicked
         public ActionResult FeedbackClicked()

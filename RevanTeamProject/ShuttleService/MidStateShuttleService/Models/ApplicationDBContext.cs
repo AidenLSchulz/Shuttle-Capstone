@@ -20,8 +20,6 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Driver> Drivers { get; set; }
 
-    public virtual DbSet<Feedback> Feedbacks { get; set; }
-
     public virtual DbSet<Routes> Routes { get; set; }
 
     public virtual DbSet<Location> Locations { get; set; }
@@ -248,41 +246,6 @@ public partial class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.DropOffLocationId)
                 .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        // Feedback Table
-        modelBuilder.Entity<Feedback>(entity =>
-        {
-            entity.ToTable("Feedback");
-
-            entity.HasKey(e => e.FeedbackId);
-
-            entity.Property(e => e.FeedbackId)
-                .ValueGeneratedOnAdd()
-                .IsRequired();
-
-            entity.Property(e => e.Comment)
-                .HasMaxLength(255);
-
-            entity.Property(e => e.DateSubmitted)
-                .HasColumnType("datetime")
-                .HasDefaultValue(new DateTime())
-                .IsRequired();
-
-            entity.Property(e => e.CustomerName)
-                .HasMaxLength(50)
-                .HasDefaultValue("Anonymous");
-
-            entity.Property(e => e.Rating)
-                .IsRequired()
-                .HasDefaultValue(0);
-
-            entity.Property(b => b.DisplayTestimonial)
-                .HasDefaultValue(false)
-                .IsRequired();
-
-            entity.Property(b => b.IsActive)
-                .HasDefaultValue(false);
         });
 
         // Message Table

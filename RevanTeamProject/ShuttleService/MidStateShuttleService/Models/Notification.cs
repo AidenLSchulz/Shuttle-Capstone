@@ -33,11 +33,6 @@ namespace MidStateShuttleService.Models
         public int? RegistrationId { get; set; }
 
         /// <summary>
-        /// If the notification was for a feedback use this
-        /// </summary>
-        public int? FeedbackId { get; set; }
-
-        /// <summary>
         /// If the notification was for a message use this
         /// </summary>
         public int? MessageId { get; set; }

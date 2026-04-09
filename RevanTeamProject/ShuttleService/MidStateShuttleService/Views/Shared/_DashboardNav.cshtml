@@ -116,15 +116,6 @@
                 </li>
             }
 
-            @if (User.IsInRole("Admin"))
-            {
-                <li>
-                    <a asp-controller="Feedback" asp-action="ViewAll">
-                        <span class="icon"><i class="bi bi-hand-thumbs-up"></i></span>
-                        <span class="title">Testimonials</span>
-                    </a>
-                </li>
-            }
 
             @if (User.IsInRole("Admin"))
             {
