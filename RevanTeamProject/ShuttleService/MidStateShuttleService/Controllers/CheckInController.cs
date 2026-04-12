@@ -52,7 +52,7 @@ namespace MidStateShuttleService.Controllers
                 return View(submittedCheckIn);
             }
 
-            submittedCheckIn.Date = DateTime.Now;
+            submittedCheckIn.Date = DateTime.UtcNow;
             submittedCheckIn.IsActive = true;
 
             _checkInService.AddEntity(submittedCheckIn);
@@ -67,9 +67,9 @@ namespace MidStateShuttleService.Controllers
 
         [Authorize(Roles = "Admin")] // DEV NOTE: Only administrators can edit existing check-ins.
         [HttpGet]
-        public IActionResult EditCheckIn(int checkInId)
+        public IActionResult EditCheckIn(int id)
         {
-            CheckIn existingCheckIn = _checkInService.GetEntityById(checkInId);
+            CheckIn existingCheckIn = _checkInService.GetEntityById(id);
 
             if (existingCheckIn == null)
                 return FailedCheckIn("Check-in not found.");
@@ -118,7 +118,7 @@ namespace MidStateShuttleService.Controllers
 
             _checkInService.UpdateEntity(existingCheckIn);
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("ViewAll", "CheckIn");
         }
 
         [HttpGet]

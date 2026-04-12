@@ -38,6 +38,10 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Ride> Rides { get; set; }
 
+    public virtual DbSet<MailItem> MailItems { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Bus table
@@ -309,9 +313,6 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.responseRequired)
                 .IsRequired()
                 .HasDefaultValue(false);
-
-            entity.Property(e => e.contactInfo)
-                .HasMaxLength(50);
 
             entity.Property(b => b.IsActive)
                 .HasDefaultValue(false);

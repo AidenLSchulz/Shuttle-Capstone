@@ -79,6 +79,16 @@
             @if (User.IsInRole("Admin") || User.IsInRole("Driver"))
             {
                 <li>
+                    <a asp-controller="Mail" asp-action="Create">
+                        <span class="icon"><i class="bi bi-envelope-paper"></i></span>
+                        <span class="title">Mail Tracking</span>
+                    </a>
+                </li>
+            }
+
+            @if (User.IsInRole("Admin") || User.IsInRole("Driver"))
+            {
+                <li>
                     <a asp-controller="Shuttles" asp-action="ViewAll">
                         <span class="icon"><i class="bi bi-bus-front"></i></span>
                         <span class="title">Shuttles</span>
@@ -99,14 +109,14 @@
             @if (User.IsInRole("Admin"))
             {
                 <li>
-                    <a asp-controller="Dashboard" asp-action="Reports">
+                    <a asp-controller="Reports" asp-action="Reports">
                         <span class="icon"><i class="bi bi-bar-chart-line"></i></span>
                         <span class="title">Reports</span>
                     </a>
                 </li>
             }
 
-            @if (User.IsInRole("Admin"))
+            @* @if (User.IsInRole("Admin"))
             {
                 <li>
                     <a asp-controller="Feedback" asp-action="ViewAll">
@@ -114,18 +124,27 @@
                         <span class="title">Testimonials</span>
                     </a>
                 </li>
-            }
+            } *@
 
-            @if (User.IsInRole("Admin") || User.IsInRole("Driver"))
+            @if (User.IsInRole("Admin"))
             {
                 <li>
-                    <a asp-controller="Communicate" asp-action="Index">
+                    <a asp-controller="Communicate" asp-action="ViewAll">
                         <span class="icon"><i class="bi bi-chat-left-text"></i></span>
-                        <span class="title">Send Messages</span>
+                        <span class="title">View Messages
+                        </span>
                     </a>
                 </li>
             }
 
+            <li>
+                <a asp-controller="Routes" asp-action="ViewScheduleTable">
+                    <span class="icon"><i class="bi bi-calendar3"></i></span>
+                    <span class="title">View Route Schedule
+                    </span>
+                </a>
+            </li>
+            
             <li>
                 <a asp-controller="Home" asp-action="Index">
                     <span class="icon"><i class="bi bi-escape"></i></span>
