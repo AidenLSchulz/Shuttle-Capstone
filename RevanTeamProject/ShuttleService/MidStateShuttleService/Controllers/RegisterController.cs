@@ -1,9 +1,11 @@
 using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.DotNet.Scaffolding.Shared.Project;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MidStateShuttleService.Migrations;
 using MidStateShuttleService.Models;
@@ -16,6 +18,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading;
 
 namespace MidStateShuttleService.Controllers
 {
@@ -27,12 +30,15 @@ namespace MidStateShuttleService.Controllers
 
         private readonly ILogger<RegisterController> _logger;
 
+        private readonly IMemoryCache _cache;
+
         // Inject ApplicationDbContext into the controller constructor
-        public RegisterController(ApplicationDbContext context, EmailServices emailServices, ILogger<RegisterController> logger)
+        public RegisterController(ApplicationDbContext context, EmailServices emailServices, ILogger<RegisterController> logger, IMemoryCache cache)
         {
             _context = context; // Assign the injected ApplicationDbContext to the _context field
             _emailServices = emailServices;
             _logger = logger;
+            _cache = cache;
         }
 
         //overload method for default
@@ -124,6 +130,32 @@ namespace MidStateShuttleService.Controllers
 
             // Repopulate LocationNames in case we return to the view
             model.LocationNames = ls.GetLocationNames();
+
+            //Limiter
+            const int LIMIT = 10;
+            const int WINDOW_MINUTES = 5;
+
+            var now = DateTime.UtcNow;
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var key = $"ratelimit_{ip}";
+
+            var entry = _cache.GetOrCreate(key, e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(WINDOW_MINUTES);
+                return (Count: 0, FirstAttempt: now);
+            });
+
+            entry.Count++;
+            _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
+
+            if (entry.Count > LIMIT)
+            {
+                TempData["Error"] = "Too many submissions. Please wait before trying again.";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                return View("Index", model);
+            }
+            //end limiter
+            
 
             if (ModelState.IsValid)
             {

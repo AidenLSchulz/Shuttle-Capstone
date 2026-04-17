@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MidStateShuttleService.Models;
 using MidStateShuttleService.Service;
 using MidStateShuttleService.Services;
@@ -16,19 +17,22 @@ namespace MidStateShuttleService.Controllers
         private readonly ILogger<CheckInController> _logger;
         private readonly IWebHostEnvironment _environment;
         private readonly ApplicationDbContext _context;
+        private readonly IMemoryCache _cache;
 
         public CheckInController(
             ApplicationDbContext context,
             CheckInServices checkInService,
             LocationServices locationService,
             ILogger<CheckInController> logger,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IMemoryCache cache)
         {
             _context = context;
             _checkInService = checkInService;
             _locationService = locationService;
             _logger = logger;
             _environment = environment;
+            _cache = cache;
         }
 
         [AllowAnonymous] // DEV NOTE: Public endpoint used by riders to access the check-in form.
@@ -40,10 +44,31 @@ namespace MidStateShuttleService.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous] // DEV NOTE: Riders submit check-ins without authentication.
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public IActionResult CheckIn(CheckIn submittedCheckIn)
         {
+            // Limiter
+            const int LIMIT = 15;
+            const int WINDOW_MINUTES = 5;
+            var now = DateTime.UtcNow;
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var key = $"ratelimit_checkin_{ip}";
+            var entry = _cache.GetOrCreate(key, e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(WINDOW_MINUTES);
+                return (Count: 0, FirstAttempt: now);
+            });
+            entry.Count++;
+            _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
+            if (entry.Count > LIMIT)
+            {
+                TempData["Error"] = "Too many submissions. Please wait before trying again.";
+                ViewBag.Locations = GetLocationOptions();
+                return View(submittedCheckIn);
+            }
+            // End limiter
+
             if (!ModelState.IsValid)
             {
                 ViewBag.Locations = GetLocationOptions();

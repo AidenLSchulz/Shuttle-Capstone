@@ -57,6 +57,8 @@ namespace MidStateShuttleService
 
             builder.Services.AddAuthorization();
 
+            builder.Services.AddMemoryCache();
+
             builder.Services.AddRazorPages()
                 .AddMicrosoftIdentityUI();
 

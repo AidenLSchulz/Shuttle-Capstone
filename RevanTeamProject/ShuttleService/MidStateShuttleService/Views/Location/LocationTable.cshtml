@@ -50,7 +50,7 @@
                     <div class="form-paper mb-4 p-4 position-relative location-card"
                          data-active="@(loc.IsActive ? "true" : "false")">
 
-                        <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
 
                             <div>
                                 <h4 class="mb-1">@loc.Name</h4>
@@ -71,32 +71,40 @@
 
                             @if (User.IsInRole("Admin"))
                             {
-                                <div class="text-end">
-                                    <a asp-controller="Location" asp-action="Edit" asp-route-id="@loc.LocationId"
-                                       class="btn btn-midstate btn-sm me-2">
-                                        <i class="bi bi-pencil-fill me-1"></i> Update
+                                <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
+                                    <a asp-controller="Location"
+                                       asp-action="Edit"
+                                       asp-route-id="@loc.LocationId"
+                                       class="btn-midstate btn-midstatehover">
+                                        <span class="btn-text">Update</span>
+                                        <i class="bi bi-pencil-fill btn-icon"></i>
                                     </a>
 
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
                                         <form asp-action="Unarchive" method="post">
                                             <input type="hidden" name="id" value="@loc.LocationId" />
-                                            <button class="btn btn-midstate btn-danger btn-sm" type="submit">Unarchive</button>
+                                            <button class="btn-midstate btn-midstatehover" type="submit">
+                                                <span class="btn-text">Unarchive</span>
+                                                <i class="bi bi-arrow-up-circle-fill btn-icon"></i>
+                                            </button>
                                         </form>
                                     }
                                     else
                                     {
-                                        <form asp-controller="Location" asp-action="DeleteLocation" method="post" style="display:inline;">
+                                        <form asp-controller="Location"
+                                              asp-action="DeleteLocation"
+                                              method="post">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@loc.LocationId" />
 
-                                            <button type="submit" class="btn btn-midstate btn-sm btn-danger">
-                                                <i class="bi bi-trash-fill me-1"></i> Archive
+                                            <button type="submit"
+                                                    class="btn-midstate btn-midstatehover">
+                                                <span class="btn-text">Archive</span>
+                                                <i class="bi bi-archive-fill btn-icon"></i>
                                             </button>
                                         </form>
                                     }
-
-                                    
                                 </div>
                             }
 
