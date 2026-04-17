@@ -82,8 +82,8 @@
 
             <!-- NOTES -->
             <div class="form-group">
-                @Html.LabelFor(m => m.customMessage, "Special Request Ride Details")
-                <span class="help-icon" data-help="Please fill out details about your request here.">?</span>
+                @Html.LabelFor(m => m.customMessage, "Special Request Ride Details, Include Pickup/Dropoff Locations")
+                <span class="help-icon" data-help="Please fill out details about your request here. Please include your pickup and dropoff location information.">?</span>
                 @Html.TextAreaFor(m => m.customMessage,
                                  5, 50,
                                  new { @class = "midstate-textinput", placeholder = "Enter additional details..." })
