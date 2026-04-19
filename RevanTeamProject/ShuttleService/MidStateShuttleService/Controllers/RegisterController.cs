@@ -38,12 +38,15 @@ namespace MidStateShuttleService.Controllers
             _context = context; // Assign the injected ApplicationDbContext to the _context field
             _emailServices = emailServices;
             _logger = logger;
+
+            _logger.LogInformation("RegisterController initialized.");
             _cache = cache;
         }
 
         //overload method for default
         private List<SelectListItem> GetSchoolTermSelectList()
         {
+            _logger.LogInformation("GetSchoolTermSelectList() called.");
             return GetSchoolTermSelectList(false);
         }
 
@@ -54,6 +57,8 @@ namespace MidStateShuttleService.Controllers
         /// <returns></returns>
         private List<SelectListItem> GetSchoolTermSelectList(bool isSpecial)
         {
+            _logger.LogInformation("GetSchoolTermSelectList(bool) called. isSpecial: {IsSpecial}", isSpecial);
+
             var terms = Enum.GetValues(typeof(SchoolTerm))
                 .Cast<SchoolTerm>();
 
@@ -73,6 +78,8 @@ namespace MidStateShuttleService.Controllers
 
         private string GetEnumDisplayName(Enum enumValue)
         {
+            _logger.LogInformation("GetEnumDisplayName called for enum value: {EnumValue}", enumValue);
+
             return enumValue.GetType()
                 .GetMember(enumValue.ToString())
                 .First()
@@ -86,6 +93,8 @@ namespace MidStateShuttleService.Controllers
         /// <returns></returns>
         public IActionResult Index()
         {
+            _logger.LogInformation("Index action called.");
+
             LocationServices ls = new LocationServices(_context);
 
             string email = "";
@@ -103,17 +112,21 @@ namespace MidStateShuttleService.Controllers
 
             model.TimeOptions = GetTimeSelectList();
             ViewBag.Terms = GetSchoolTermSelectList();
+
+            _logger.LogInformation("Index action returning view.");
             return View(model);
         }
 
         public IActionResult Privacy()
         {
+            _logger.LogInformation("Privacy action called.");
             return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
+            _logger.LogError("Error action called. RequestId: {RequestId}", Activity.Current?.Id ?? HttpContext.TraceIdentifier);
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
@@ -121,6 +134,8 @@ namespace MidStateShuttleService.Controllers
         [HttpPost]
         public ActionResult Register(RegisterModel model)
         {
+            _logger.LogInformation("Register action called for Name: {Name}, Email: {Email}, IsCustom: {IsCustom}", model?.Name, model?.Email, model?.isCustom);
+
             LocationServices ls = new LocationServices(_context);
             RegisterServices rs = new RegisterServices(_context);
 
@@ -159,6 +174,8 @@ namespace MidStateShuttleService.Controllers
 
             if (ModelState.IsValid)
             {
+                _logger.LogInformation("ModelState is valid for registration submission.");
+
                 // -------- VALIDATION SECTION --------
 
                 // Ensure days are not repeated
@@ -172,7 +189,8 @@ namespace MidStateShuttleService.Controllers
 
                     if (duplicateDays.Any())
                     {
-                        TempData["Error"] = "Each request day (Monday–Thursday) can only be selected once.";
+                        _logger.LogWarning("Duplicate request days detected: {DuplicateDays}", string.Join(", ", duplicateDays));
+                        TempData["Error"] = "Each request day (Mondayï¿½Thursday) can only be selected once.";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
                     }
@@ -187,6 +205,7 @@ namespace MidStateShuttleService.Controllers
 
                     if (!hasRide)
                     {
+                        _logger.LogWarning("Registration failed validation because no rides were provided.");
                         TempData["Error"] = "At least one ride must be added to submit a registration.";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
@@ -198,6 +217,7 @@ namespace MidStateShuttleService.Controllers
 
                     if (emptyDayExists)
                     {
+                        _logger.LogWarning("Registration failed validation because at least one request day had zero rides.");
                         TempData["Error"] = "Every request day must contain at least one ride.";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
@@ -214,6 +234,7 @@ namespace MidStateShuttleService.Controllers
 
                 if (invalidRide)
                 {
+                    _logger.LogWarning("Registration failed validation because at least one ride was missing both route and drop-off time.");
                     TempData["Error"] = "Each ride must have either a route selected or a drop-off time.";
                     ViewBag.Terms = GetSchoolTermSelectList();
                     return View("Index", model);
@@ -223,6 +244,8 @@ namespace MidStateShuttleService.Controllers
 
                 if (rs.AddEntity(model))
                 {
+                    _logger.LogInformation("Registration saved successfully. RegistrationId: {RegistrationId}", model.RegistrationId);
+
                     int registrationCount = HttpContext.Session.GetInt32("RegistrationCount") ?? 0;
                     registrationCount++;
 
@@ -232,10 +255,12 @@ namespace MidStateShuttleService.Controllers
 
                     if (model.isCustom)
                     {
+                        _logger.LogInformation("Building special registration email for RegistrationId: {RegistrationId}", model.RegistrationId);
                         emailBody = BuildEmailForSpecialRegisterSubmit(model.RegistrationId);
                     }
                     else
                     {
+                        _logger.LogInformation("Building standard registration email for RegistrationId: {RegistrationId}", model.RegistrationId);
                         emailBody = BuildEmailForRegisterSubmit(model.RegistrationId);
                     }
 
@@ -244,6 +269,8 @@ namespace MidStateShuttleService.Controllers
                         emailBody,
                         isHtml: true
                     );
+
+                    _logger.LogInformation("Admin email sent for RegistrationId: {RegistrationId}", model.RegistrationId);
 
                     //Send notification for the admin page
 
@@ -255,17 +282,24 @@ namespace MidStateShuttleService.Controllers
 
                     new NotificationService(_context).SendNotification(notif);
 
+                    _logger.LogInformation("Notification sent for RegistrationId: {RegistrationId}", model.RegistrationId);
 
                     TempData["Success"] = "Registration created successfully.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
+                    _logger.LogError("Registration save failed for Name: {Name}, Email: {Email}", model.Name, model.Email);
                     TempData["Error"] = "Something went wrong.";
                 }
             }
+            else
+            {
+                _logger.LogWarning("ModelState is invalid for registration submission.");
+            }
 
             ViewBag.Terms = GetSchoolTermSelectList();
+            _logger.LogInformation("Register action returning Index view due to validation or save failure.");
             return View("Index", model);
         }
 
@@ -275,6 +309,8 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult ViewAll(bool viewArchived = false)
         {
+            _logger.LogInformation("ViewAll action called. viewArchived: {ViewArchived}", viewArchived);
+
             var registrations = _context.RegisterModels
                 .Include(r => r.DaySchedules)
                 .ThenInclude(d => d.Rides)
@@ -284,6 +320,7 @@ namespace MidStateShuttleService.Controllers
 
             ViewData["Archives"] = viewArchived;
 
+            _logger.LogInformation("ViewAll action returning {Count} registrations.", registrations.Count);
             return View("RegistrationTable", registrations);
         }
 
@@ -294,6 +331,8 @@ namespace MidStateShuttleService.Controllers
         /// <returns></returns>
         public IActionResult ViewPassengerList(int routeId)
         {
+            _logger.LogInformation("ViewPassengerList action called for RouteId: {RouteId}", routeId);
+
             // Get the route including Pickup and Dropoff locations
             Routes route = _context.Routes
                 .Include(r => r.PickUpLocation)    // assuming navigation property
@@ -308,6 +347,11 @@ namespace MidStateShuttleService.Controllers
                 string dayOfWeek = route.DayOfWeek.ToString();
 
                 TempData["RouteInfo"] = $"Requests for Route: {dayOfWeek}, From: {pickupName} To {dropoffName}";
+                _logger.LogInformation("Route info built for RouteId: {RouteId}", routeId);
+            }
+            else
+            {
+                _logger.LogWarning("No route found for RouteId: {RouteId}", routeId);
             }
 
             // Get registrations for this route
@@ -319,6 +363,7 @@ namespace MidStateShuttleService.Controllers
                         .Any(ride => ride.RouteId == routeId)))
                 .ToList();
 
+            _logger.LogInformation("ViewPassengerList returning {Count} registrations for RouteId: {RouteId}", registrations.Count, routeId);
             return View("PassengerList", registrations);
         }
 
@@ -326,6 +371,8 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult Details(int registrationId)
         {
+            _logger.LogInformation("Details action called for RegistrationId: {RegistrationId}", registrationId);
+
             var registration = _context.RegisterModels
             .Include(r => r.DaySchedules)
                 .ThenInclude(d => d.Rides)
@@ -333,7 +380,10 @@ namespace MidStateShuttleService.Controllers
             .FirstOrDefault(r => r.RegistrationId == registrationId);
 
             if (registration == null)
+            {
+                _logger.LogWarning("Details action could not find RegistrationId: {RegistrationId}", registrationId);
                 return NotFound();
+            }
 
             ViewBag.Terms = GetSchoolTermSelectList();
 
@@ -365,6 +415,7 @@ namespace MidStateShuttleService.Controllers
             }
             ViewBag.RoutesByPickDrop = routesByPickDrop;
 
+            _logger.LogInformation("Details action returning view for RegistrationId: {RegistrationId}", registrationId);
             return View(registration);
         }
 
@@ -380,14 +431,20 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult SpecialDetails(int registrationId)
         {
+            _logger.LogInformation("SpecialDetails action called for RegistrationId: {RegistrationId}", registrationId);
+
             var model = _context.RegisterModels
                 .FirstOrDefault(r => r.RegistrationId == registrationId);
 
             if (model == null)
+            {
+                _logger.LogWarning("SpecialDetails action could not find RegistrationId: {RegistrationId}", registrationId);
                 return NotFound();
+            }
 
             ViewBag.Terms = GetSchoolTermSelectList(true);
 
+            _logger.LogInformation("SpecialDetails action returning view for RegistrationId: {RegistrationId}", registrationId);
             return View(model);
         }
 
@@ -396,10 +453,14 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult EditSave(RegisterModel model)
         {
+            _logger.LogInformation("EditSave action called for RegistrationId: {RegistrationId}", model?.RegistrationId);
+
             LocationServices ls = new LocationServices(_context);
 
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("EditSave ModelState invalid for RegistrationId: {RegistrationId}", model?.RegistrationId);
+
                 ViewBag.Terms = GetSchoolTermSelectList();
                 model.LocationNames = ls.GetLocationNames();
                 model.TimeOptions = GetTimeSelectList();
@@ -413,7 +474,10 @@ namespace MidStateShuttleService.Controllers
                 .FirstOrDefault(r => r.RegistrationId == model.RegistrationId);
 
             if (existing == null)
+            {
+                _logger.LogWarning("EditSave could not find RegistrationId: {RegistrationId}", model.RegistrationId);
                 return NotFound();
+            }
 
             // Update Registration fields
             existing.Term = model.Term;
@@ -454,6 +518,7 @@ namespace MidStateShuttleService.Controllers
 
             _context.SaveChanges();
 
+            _logger.LogInformation("EditSave completed successfully for RegistrationId: {RegistrationId}", existing.RegistrationId);
             return RedirectToAction("Details",
                 new { registrationId = existing.RegistrationId });
         }
@@ -468,8 +533,11 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult SpecialEditSave(RegisterModel model)
         {
+            _logger.LogInformation("SpecialEditSave action called for RegistrationId: {RegistrationId}", model?.RegistrationId);
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("SpecialEditSave ModelState invalid for RegistrationId: {RegistrationId}", model?.RegistrationId);
                 ViewBag.Terms = GetSchoolTermSelectList(true);
                 return View("SpecialDetails", model);
             }
@@ -478,7 +546,10 @@ namespace MidStateShuttleService.Controllers
                 .FirstOrDefault(r => r.RegistrationId == model.RegistrationId);
 
             if (existing == null)
+            {
+                _logger.LogWarning("SpecialEditSave could not find RegistrationId: {RegistrationId}", model.RegistrationId);
                 return NotFound();
+            }
 
             // Update only special request fields
             existing.Term = model.Term;
@@ -493,12 +564,15 @@ namespace MidStateShuttleService.Controllers
 
             _context.SaveChanges();
 
+            _logger.LogInformation("SpecialEditSave completed successfully for RegistrationId: {RegistrationId}", existing.RegistrationId);
             return RedirectToAction("SpecialDetails",
                 new { registrationId = existing.RegistrationId });
         }
 
         private List<SelectListItem> GetTimeSelectList()
         {
+            _logger.LogInformation("GetTimeSelectList called.");
+
             var times = new List<SelectListItem>();
 
             var start = new TimeOnly(7, 30);
@@ -513,12 +587,15 @@ namespace MidStateShuttleService.Controllers
                 });
             }
 
+            _logger.LogInformation("GetTimeSelectList returning {Count} time options.", times.Count);
             return times;
         }
 
         [HttpGet]
         public ActionResult SpecialRequest()
         {
+            _logger.LogInformation("SpecialRequest action called.");
+
             LocationServices ls = new LocationServices(_context);
 
             string email = "";
@@ -534,17 +611,23 @@ namespace MidStateShuttleService.Controllers
             model.Name = fullName;
             model.StudentId = studentId;
             ViewBag.Terms = GetSchoolTermSelectList(true);
+
+            _logger.LogInformation("SpecialRequest action returning view.");
             return View("SpecialRequest", model);
         }
 
         [Authorize]
         public ActionResult RegisterConfirmation(RegisterModel model)
         {
+            _logger.LogInformation("RegisterConfirmation action called for RegistrationId: {RegistrationId}", model?.RegistrationId);
+
             if (ModelState.IsValid)
             {
+                _logger.LogInformation("RegisterConfirmation ModelState valid.");
                 return View(model);
             }
 
+            _logger.LogWarning("RegisterConfirmation ModelState invalid.");
             return View("Index", model);
         }
 
@@ -554,6 +637,8 @@ namespace MidStateShuttleService.Controllers
         [AllowAnonymous]
         public ActionResult GetRoutes(int pickUpLocationId, int dropOffLocationId)
         {
+            _logger.LogInformation("GetRoutes called. PickUpLocationId: {PickUpLocationId}, DropOffLocationId: {DropOffLocationId}", pickUpLocationId, dropOffLocationId);
+
             RouteServices rs = new RouteServices(_context);
             // This call will now also check the IsActive property of each route
             var routesList = rs.GetRoutesByLocations(pickUpLocationId, dropOffLocationId)
@@ -577,6 +662,7 @@ namespace MidStateShuttleService.Controllers
                     });
             }
 
+            _logger.LogInformation("GetRoutes returning {Count} routes.", formattedRoutesList.Count);
             return Json(formattedRoutesList);
         }
 
@@ -584,14 +670,20 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult Unarchive(int id)
         {
+            _logger.LogInformation("Unarchive action called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels.Find(id);
 
             if (registration == null)
+            {
+                _logger.LogWarning("Unarchive could not find RegistrationId: {RegistrationId}", id);
                 return NotFound();
+            }
 
             registration.IsArchived = false;
             _context.SaveChanges();
 
+            _logger.LogInformation("Unarchive completed for RegistrationId: {RegistrationId}", id);
             return RedirectToAction("ViewAll", new { viewArchived = true });
         }
 
@@ -599,20 +691,31 @@ namespace MidStateShuttleService.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult ArchiveRegistration(int id)
         {
+            _logger.LogInformation("ArchiveRegistration action called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels.FirstOrDefault(r => r.RegistrationId == id);
             if (registration == null)
+            {
+                _logger.LogWarning("ArchiveRegistration could not find RegistrationId: {RegistrationId}", id);
                 return NotFound();
+            }
 
             if (!User.IsInRole("Admin"))
+            {
+                _logger.LogWarning("ArchiveRegistration forbidden for RegistrationId: {RegistrationId}. User is not Admin.", id);
                 return Forbid();
+            }
 
             registration.IsArchived = true;
             _context.SaveChanges();
 
+            _logger.LogInformation("ArchiveRegistration completed for RegistrationId: {RegistrationId}", id);
             return RedirectToAction("ViewAll");
         }
         private JsonResult GetRouteInfo(int pickUpLocationId, int dropOffLocationId)
         {
+            _logger.LogInformation("GetRouteInfo called. PickUpLocationId: {PickUpLocationId}, DropOffLocationId: {DropOffLocationId}", pickUpLocationId, dropOffLocationId);
+
             RouteServices rs = new RouteServices(_context);
             var routesList = rs.GetRoutesByLocations(pickUpLocationId, dropOffLocationId).Where(route => route.IsActive).ToList();
 
@@ -632,6 +735,7 @@ namespace MidStateShuttleService.Controllers
                 });
             }
 
+            _logger.LogInformation("GetRouteInfo returning {Count} routes.", formattedRoutesList.Count);
             return Json(formattedRoutesList);
         }
 
@@ -642,6 +746,8 @@ namespace MidStateShuttleService.Controllers
         /// <returns>A string formatted time.</returns>
         private string ToStringRideTimes(TimeOnly? time)
         {
+            _logger.LogInformation("ToStringRideTimes called. HasValue: {HasValue}", time.HasValue);
+
             if (time.HasValue)
             {
                 return time.Value.ToString("hh:mm tt");
@@ -657,6 +763,8 @@ namespace MidStateShuttleService.Controllers
         /// <returns>The final route to be displayed in email.</returns>
         private string ParseInitialResult(ActionResult actionResult, string initialRoute)
         {
+            _logger.LogInformation("ParseInitialResult called.");
+
             if (actionResult is JsonResult jsonResult)
             {
                 string jsonString = JsonSerializer.Serialize(jsonResult.Value);
@@ -668,6 +776,7 @@ namespace MidStateShuttleService.Controllers
                 initialRoute = doc.RootElement[0].GetProperty("Detail").GetString();
             }
 
+            _logger.LogInformation("ParseInitialResult completed.");
             return initialRoute;
         }
 
@@ -676,6 +785,8 @@ namespace MidStateShuttleService.Controllers
         /// </summary>
         private string BuildEmailForRegisterSubmit(int id)
         {
+            _logger.LogInformation("BuildEmailForRegisterSubmit called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels
                 .Include(r => r.DaySchedules)
                     .ThenInclude(d => d.Rides)
@@ -694,7 +805,10 @@ namespace MidStateShuttleService.Controllers
                 .FirstOrDefault(r => r.RegistrationId == id);
 
             if (registration == null)
+            {
+                _logger.LogWarning("BuildEmailForRegisterSubmit could not find RegistrationId: {RegistrationId}", id);
                 return "<p>Registration not found.</p>";
+            }
 
             string isAdultText = registration.IsAdult ? "Adult Rider" : "Minor Rider";
             string sId = string.IsNullOrEmpty(registration.StudentId) ? "N/A" : registration.StudentId;
@@ -734,6 +848,10 @@ namespace MidStateShuttleService.Controllers
                             else
                             {
                                 rideRows += $@"
+                            }
+                            else
+                            {
+                                rideRows += $@"
                                 <tr>
                                     <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
                                     <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
@@ -763,6 +881,8 @@ namespace MidStateShuttleService.Controllers
                 </table>";
                 }
             }
+
+            _logger.LogInformation("BuildEmailForRegisterSubmit completed for RegistrationId: {RegistrationId}", id);
 
             return $@"
             <html>
@@ -823,11 +943,16 @@ namespace MidStateShuttleService.Controllers
         /// </summary>
         private string BuildEmailForSpecialRegisterSubmit(int id)
         {
+            _logger.LogInformation("BuildEmailForSpecialRegisterSubmit called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels
                 .FirstOrDefault(r => r.RegistrationId == id);
 
             if (registration == null)
+            {
+                _logger.LogWarning("BuildEmailForSpecialRegisterSubmit could not find RegistrationId: {RegistrationId}", id);
                 return "<p>Registration not found.</p>";
+            }
 
             string isAdultText = registration.IsAdult
                 ? "The Rider is an Adult"
@@ -882,16 +1007,16 @@ namespace MidStateShuttleService.Controllers
                     <h3>Additional Details</h3>
                     <p>{registration.customMessage}</p>
                     ";
-                        }
+            }
 
-                        html += @"
+            html += @"
                     <hr/>
                 </body>
                 </html>
                 ";
 
+            _logger.LogInformation("BuildEmailForSpecialRegisterSubmit completed for RegistrationId: {RegistrationId}", id);
             return html;
         }
     }
 }
-
