@@ -146,20 +146,32 @@ namespace MidStateShuttleService.Controllers
             // Repopulate LocationNames in case we return to the view
             model.LocationNames = ls.GetLocationNames();
 
-            // Limiter
-            const int LIMIT = 10;
-            const int WINDOW_MINUTES = 5;
+            // ===============================
+            // RATE LIMITER
+            // Prevents excessive form submissions per IP within a time window
+            // ===============================
+
+            const int LIMIT = 10;               // Maximum allowed submissions per window
+            const int WINDOW_MINUTES = 5;       // Time window duration
 
             var now = DateTime.UtcNow;
+
+            // Identify user by IP address (basic rate-limiting key)
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var key = $"ratelimit_{ip}";
 
-            // Try to get existing entry
+            // ===============================
+            // Retrieve existing rate limit entry
+            // Stored as (RequestCount, FirstRequestTime)
+            // ===============================
             var entry = _cache.Get<(int Count, DateTime FirstAttempt)>(key);
 
+            // ===============================
+            // CASE 1: No entry OR window expired
+            // -> Start a new rate limit window
+            // ===============================
             if (entry == default || (now - entry.FirstAttempt).TotalMinutes > WINDOW_MINUTES)
             {
-                // Reset window
                 entry = (Count: 1, FirstAttempt: now);
 
                 _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
@@ -172,16 +184,22 @@ namespace MidStateShuttleService.Controllers
             }
             else
             {
+                // ===============================
+                // CASE 2: Existing active window
+                // -> Increment request count
+                // ===============================
                 entry.Count++;
 
+                // Calculate remaining time in the current window
                 var remaining = TimeSpan.FromMinutes(WINDOW_MINUTES) - (now - entry.FirstAttempt);
 
-                // Prevent negative expiration edge case
+                // Safety check: prevent negative or invalid cache expiration
                 if (remaining <= TimeSpan.Zero)
                 {
                     remaining = TimeSpan.FromSeconds(1);
                 }
 
+                // Update cache with new count and remaining lifetime
                 _cache.Set(key, entry, remaining);
 
                 _logger.LogInformation(
@@ -193,7 +211,10 @@ namespace MidStateShuttleService.Controllers
                 );
             }
 
-            // Check limit
+            // ===============================
+            // ENFORCEMENT
+            // Block request if limit exceeded
+            // ===============================
             if (entry.Count > LIMIT)
             {
                 _logger.LogWarning(
@@ -208,7 +229,10 @@ namespace MidStateShuttleService.Controllers
                 ViewBag.Terms = GetSchoolTermSelectList();
                 return View("Index", model);
             }
-            //end limiter
+
+            // ===============================
+            // END RATE LIMITER
+            // ===============================
 
 
             if (ModelState.IsValid)
