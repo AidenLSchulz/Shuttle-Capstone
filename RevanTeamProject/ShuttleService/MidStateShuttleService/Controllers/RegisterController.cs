@@ -146,7 +146,7 @@ namespace MidStateShuttleService.Controllers
             // Repopulate LocationNames in case we return to the view
             model.LocationNames = ls.GetLocationNames();
 
-            //Limiter
+            // Limiter
             const int LIMIT = 10;
             const int WINDOW_MINUTES = 5;
 
@@ -154,23 +154,62 @@ namespace MidStateShuttleService.Controllers
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var key = $"ratelimit_{ip}";
 
-            var entry = _cache.GetOrCreate(key, e =>
+            // Try to get existing entry
+            var entry = _cache.Get<(int Count, DateTime FirstAttempt)>(key);
+
+            if (entry == default || (now - entry.FirstAttempt).TotalMinutes > WINDOW_MINUTES)
             {
-                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(WINDOW_MINUTES);
-                return (Count: 0, FirstAttempt: now);
-            });
+                // Reset window
+                entry = (Count: 1, FirstAttempt: now);
 
-            entry.Count++;
-            _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
+                _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
 
+                _logger.LogInformation(
+                    "RateLimit RESET | IP: {IP} | New window started at {Time}",
+                    ip,
+                    now
+                );
+            }
+            else
+            {
+                entry.Count++;
+
+                var remaining = TimeSpan.FromMinutes(WINDOW_MINUTES) - (now - entry.FirstAttempt);
+
+                // Prevent negative expiration edge case
+                if (remaining <= TimeSpan.Zero)
+                {
+                    remaining = TimeSpan.FromSeconds(1);
+                }
+
+                _cache.Set(key, entry, remaining);
+
+                _logger.LogInformation(
+                    "RateLimit HIT | IP: {IP} | Count: {Count}/{Limit} | ElapsedSec: {Elapsed}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    (now - entry.FirstAttempt).TotalSeconds
+                );
+            }
+
+            // Check limit
             if (entry.Count > LIMIT)
             {
+                _logger.LogWarning(
+                    "RateLimit BLOCKED | IP: {IP} | Count: {Count} exceeded limit {Limit} | WindowStart: {FirstAttempt}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    entry.FirstAttempt
+                );
+
                 TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
                 ViewBag.Terms = GetSchoolTermSelectList();
                 return View("Index", model);
             }
             //end limiter
-            
+
 
             if (ModelState.IsValid)
             {
@@ -335,8 +374,8 @@ namespace MidStateShuttleService.Controllers
 
             // Get the route including Pickup and Dropoff locations
             Routes route = _context.Routes
-                .Include(r => r.PickUpLocation)    // assuming navigation property
-                .Include(r => r.DropOffLocation)   // assuming navigation property
+                .Include(r => r.PickUpLocation)
+                .Include(r => r.DropOffLocation)
                 .FirstOrDefault(r => r.RouteID == routeId);
 
             if (route != null)
@@ -847,11 +886,7 @@ namespace MidStateShuttleService.Controllers
                             }
                             else
                             {
-                                rideRows += $@"
-                            }
-                            else
-                            {
-                                rideRows += $@"
+                                rideRows += $@"    
                                 <tr>
                                     <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
                                     <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
