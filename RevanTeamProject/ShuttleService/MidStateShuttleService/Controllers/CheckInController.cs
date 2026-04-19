@@ -63,7 +63,7 @@ namespace MidStateShuttleService.Controllers
             _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
             if (entry.Count > LIMIT)
             {
-                TempData["Error"] = "Too many submissions. Please wait before trying again.";
+                TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
                 ViewBag.Locations = GetLocationOptions();
                 return View(submittedCheckIn);
             }

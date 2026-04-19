@@ -150,7 +150,7 @@ namespace MidStateShuttleService.Controllers
 
             if (entry.Count > LIMIT)
             {
-                TempData["Error"] = "Too many submissions. Please wait before trying again.";
+                TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
                 ViewBag.Terms = GetSchoolTermSelectList();
                 return View("Index", model);
             }
@@ -730,10 +730,10 @@ namespace MidStateShuttleService.Controllers
                                     <td style='padding: 10px 16px;'>{ride.Route.DropOffLocation?.Name ?? "Unknown"}</td>
                                     <td style='padding: 10px 16px;'>{routeLeaveTime} > {routeArriveTime}</td>
                                 </tr>";
-                                                }
-                                                else
-                                                {
-                                                    rideRows += $@"
+                            }
+                            else
+                            {
+                                rideRows += $@"
                                 <tr>
                                     <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
                                     <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
@@ -765,57 +765,57 @@ namespace MidStateShuttleService.Controllers
             }
 
             return $@"
-<html>
-<body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
+            <html>
+            <body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
 
-    <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
-        <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
-        <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
-    </div>
+                <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
+                    <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
+                    <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
+                </div>
 
-    <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
+                <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
 
-        <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
+                    <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
 
-        <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
-            <tr>
-                <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
-                <td style='padding: 6px 0;'>{sId}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Email</td>
-                <td style='padding: 6px 0;'>{registration.Email}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Phone</td>
-                <td style='padding: 6px 0;'>{registration.Phone}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Rider Status</td>
-                <td style='padding: 6px 0;'>
-                    <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
-                        {isAdultText}
-                    </span>
-                </td>
-            </tr>
-        </table>
+                    <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
+                            <td style='padding: 6px 0;'>{sId}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Email</td>
+                            <td style='padding: 6px 0;'>{registration.Email}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Phone</td>
+                            <td style='padding: 6px 0;'>{registration.Phone}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Rider Status</td>
+                            <td style='padding: 6px 0;'>
+                                <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
+                                    {isAdultText}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
 
-        <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
+                    <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
 
-        <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
+                    <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
 
-        {scheduleSections}
+                    {scheduleSections}
 
-        <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
 
-        <p style='margin: 0; font-size: 13px; color: #888;'>
-            This request will be reviewed by the shuttle program and is not guaranteed.
-        </p>
+                    <p style='margin: 0; font-size: 13px; color: #888;'>
+                        This request will be reviewed by the shuttle program and is not guaranteed.
+                    </p>
 
-    </div>
+                </div>
 
-</body>
-</html>";
+            </body>
+            </html>";
         }
 
         /// <summary>
