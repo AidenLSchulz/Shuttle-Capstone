@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -54,11 +55,12 @@ namespace MidStateShuttleService
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
             .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
-
             builder.Services.AddAuthorization();
 
             builder.Services.AddRazorPages()
                 .AddMicrosoftIdentityUI();
+
+            builder.Services.AddOpenTelemetry().UseAzureMonitor();
 
             var app = builder.Build();
 
@@ -95,6 +97,3 @@ namespace MidStateShuttleService
         }
     }
 }
-
-
-
