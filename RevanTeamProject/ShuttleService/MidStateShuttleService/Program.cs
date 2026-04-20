@@ -60,7 +60,17 @@ namespace MidStateShuttleService
             builder.Services.AddRazorPages()
                 .AddMicrosoftIdentityUI();
 
-            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            if (builder.Environment.IsDevelopment())
+            {
+                // LOCAL too log to console
+                builder.Logging.ClearProviders();
+                builder.Logging.AddConsole();
+            }
+            else
+            {
+                // AZURE / PROD too send to Application Insights
+                builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            }
 
             var app = builder.Build();
 
