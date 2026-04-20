@@ -1,20 +1,75 @@
 ﻿.btn-midstate {
-    line-height: 36px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 0 16px;
+    height: 36px;
     cursor: pointer;
-    color: #840029; /* Maroon color for text */
+    color: #840029;
     font-size: 12px;
     font-weight: 700;
-    border: 2px solid #840029; /* Initial border thickness */
-    background-color: transparent; /* Transparent background */
+    border: 2px solid #840029;
+    background-color: transparent;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin: 0 5px;
-    border-radius: 25px; /* Rounded corners */
-    transition: all 0.1s ease-out; /* Smooth transition for all properties */
-    animation: none;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: all 0.1s ease-out;
 }
+
+.btn-midstatehover {
+    position: relative;
+    overflow: hidden;
+    text-decoration: none !important;
+}
+
+    /* Ripple base */
+    .btn-midstatehover::before {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        background: #840029;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        top: var(--y, 50%);
+        left: var(--x, 50%);
+        z-index: 0;
+        transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    /* Expand ripple */
+    .btn-midstatehover:hover::before {
+        width: 300%;
+        height: 300%;
+    }
+
+    /* Hover color swap */
+    .btn-midstatehover:hover {
+        color: white !important;
+        border-color: #840029 !important;
+    }
+
+    /* Ensure content stays above ripple */
+    .btn-midstatehover .btn-text,
+    .btn-midstatehover .btn-icon {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Icon animation */
+    .btn-midstatehover .btn-icon {
+        transform: translateX(-10px);
+        opacity: 0;
+        transition: all 0.25s ease;
+    }
+
+    .btn-midstatehover:hover .btn-icon {
+        transform: translateX(0);
+        opacity: 1;
+    }
 
 /* Checkbox MidState - works with long labels */
 .checkbox-midstate {
@@ -211,3 +266,38 @@
         border-color: #5a001f; /* Darker maroon */
         box-shadow: 0 0 3px rgba(132, 0, 41, 0.4);
     }
+
+
+.action-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    /* IMPORTANT: prevents squishing main content */
+    flex-shrink: 0;
+}
+
+    /* Normalize children without breaking layout */
+    .action-panel > a,
+    .action-panel > form,
+    .action-panel > form > button {
+        width: 200px;
+        max-width: 100%;
+    }
+
+    /* Forms should NOT break layout, but also should not use display: contents */
+    .action-panel form {
+        margin: 0;
+        width: 100%;
+    }
+
+@media (max-width: 768px) {
+    .action-panel {
+        align-items: stretch;
+    }
+
+        .action-panel > a,
+        .action-panel > form > button {
+            width: 100%;
+        }
+}

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MidStateShuttleService.Models;
 using MidStateShuttleService.Service;
 using MidStateShuttleService.Services;
@@ -16,19 +17,22 @@ namespace MidStateShuttleService.Controllers
         private readonly ILogger<CheckInController> _logger;
         private readonly IWebHostEnvironment _environment;
         private readonly ApplicationDbContext _context;
+        private readonly IMemoryCache _cache;
 
         public CheckInController(
             ApplicationDbContext context,
             CheckInServices checkInService,
             LocationServices locationService,
             ILogger<CheckInController> logger,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IMemoryCache cache)
         {
             _context = context;
             _checkInService = checkInService;
             _locationService = locationService;
             _logger = logger;
             _environment = environment;
+            _cache = cache;
         }
 
         [AllowAnonymous] // DEV NOTE: Public endpoint used by riders to access the check-in form.
@@ -42,10 +46,111 @@ namespace MidStateShuttleService.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous] // DEV NOTE: Riders submit check-ins without authentication.
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public IActionResult CheckIn(CheckIn submittedCheckIn)
         {
+            // ===============================
+            // CHECK-IN RATE LIMITER
+            // Prevents spam submissions per IP address using a fixed time window
+            // ===============================
+
+            const int LIMIT = 15;               // Max allowed requests per window
+            const int WINDOW_MINUTES = 5;       // Time window length
+
+            var now = DateTime.UtcNow;
+
+            // Identify user by IP address (basic anti-spam mechanism)
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var key = $"ratelimit_checkin_{ip}";
+
+            // ===============================
+            // Retrieve existing rate limit entry for this IP
+            // Stored as (Count, FirstAttemptTime)
+            // ===============================
+            var entry = _cache.Get<(int Count, DateTime FirstAttempt)>(key);
+
+            // ===============================
+            // CASE 1: No entry exists OR window has expired
+            // -> Start a new tracking window
+            // ===============================
+            if (entry == default || (now - entry.FirstAttempt).TotalMinutes > WINDOW_MINUTES)
+            {
+                entry = (Count: 1, FirstAttempt: now);
+
+                _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
+
+                _logger.LogInformation(
+                    "CheckIn RateLimit RESET | IP: {IP} | WindowStart: {Start}",
+                    ip,
+                    now
+                );
+            }
+            else
+            {
+                // ===============================
+                // CASE 2: Existing window active
+                // -> Increment request count
+                // ===============================
+                entry.Count++;
+
+                // Calculate remaining time in current window
+                var remaining = TimeSpan.FromMinutes(WINDOW_MINUTES) - (now - entry.FirstAttempt);
+
+                // Safety fallback (prevents negative expiration values)
+                if (remaining <= TimeSpan.Zero)
+                    remaining = TimeSpan.FromSeconds(1);
+
+                // Update cache with new count and remaining TTL
+                _cache.Set(key, entry, remaining);
+
+                _logger.LogInformation(
+                    "CheckIn RateLimit HIT | IP: {IP} | Count: {Count}/{Limit} | ElapsedSec: {Elapsed} | RemainingSec: {Remaining}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    (now - entry.FirstAttempt).TotalSeconds,
+                    remaining.TotalSeconds
+                );
+            }
+
+            // ===============================
+            // BURST DETECTION (potential spam behavior)
+            // Triggers if 4+ requests occur within 30 seconds
+            // ===============================
+            if (entry.Count >= 4 && (now - entry.FirstAttempt).TotalSeconds <= 30)
+            {
+                _logger.LogWarning(
+                    "CheckIn RateLimit BURST | IP: {IP} | Count: {Count} in {Seconds}s",
+                    ip,
+                    entry.Count,
+                    (now - entry.FirstAttempt).TotalSeconds
+                );
+            }
+
+            // ===============================
+            // ENFORCEMENT STEP
+            // Block request if limit exceeded
+            // ===============================
+            if (entry.Count > LIMIT)
+            {
+                _logger.LogWarning(
+                    "CheckIn RateLimit BLOCKED | IP: {IP} | Count: {Count} exceeded {Limit} | WindowStart: {Start}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    entry.FirstAttempt
+                );
+
+                TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
+                ViewBag.Locations = GetLocationOptions();
+                return View(submittedCheckIn);
+            }
+
+            // ===============================
+            // END RATE LIMITER
+            // ===============================
+
             _logger.LogInformation("Check-in submission received for Name: {Name}, StudentId: {StudentId}", submittedCheckIn?.Name, submittedCheckIn?.StudentId);
 
             if (!ModelState.IsValid)
