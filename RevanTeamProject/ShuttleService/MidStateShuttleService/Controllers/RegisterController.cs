@@ -1,9 +1,11 @@
 using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.DotNet.Scaffolding.Shared.Project;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MidStateShuttleService.Migrations;
 using MidStateShuttleService.Models;
@@ -16,6 +18,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading;
 
 namespace MidStateShuttleService.Controllers
 {
@@ -27,14 +30,17 @@ namespace MidStateShuttleService.Controllers
 
         private readonly ILogger<RegisterController> _logger;
 
+        private readonly IMemoryCache _cache;
+
         // Inject ApplicationDbContext into the controller constructor
-        public RegisterController(ApplicationDbContext context, EmailServices emailServices, ILogger<RegisterController> logger)
+        public RegisterController(ApplicationDbContext context, EmailServices emailServices, ILogger<RegisterController> logger, IMemoryCache cache)
         {
             _context = context; // Assign the injected ApplicationDbContext to the _context field
             _emailServices = emailServices;
             _logger = logger;
 
             _logger.LogInformation("RegisterController initialized.");
+            _cache = cache;
         }
 
         //overload method for default
@@ -140,6 +146,95 @@ namespace MidStateShuttleService.Controllers
             // Repopulate LocationNames in case we return to the view
             model.LocationNames = ls.GetLocationNames();
 
+            // ===============================
+            // RATE LIMITER
+            // Prevents excessive form submissions per IP within a time window
+            // ===============================
+
+            const int LIMIT = 10;               // Maximum allowed submissions per window
+            const int WINDOW_MINUTES = 5;       // Time window duration
+
+            var now = DateTime.UtcNow;
+
+            // Identify user by IP address (basic rate-limiting key)
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var key = $"ratelimit_{ip}";
+
+            // ===============================
+            // Retrieve existing rate limit entry
+            // Stored as (RequestCount, FirstRequestTime)
+            // ===============================
+            var entry = _cache.Get<(int Count, DateTime FirstAttempt)>(key);
+
+            // ===============================
+            // CASE 1: No entry OR window expired
+            // -> Start a new rate limit window
+            // ===============================
+            if (entry == default || (now - entry.FirstAttempt).TotalMinutes > WINDOW_MINUTES)
+            {
+                entry = (Count: 1, FirstAttempt: now);
+
+                _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
+
+                _logger.LogInformation(
+                    "RateLimit RESET | IP: {IP} | New window started at {Time}",
+                    ip,
+                    now
+                );
+            }
+            else
+            {
+                // ===============================
+                // CASE 2: Existing active window
+                // -> Increment request count
+                // ===============================
+                entry.Count++;
+
+                // Calculate remaining time in the current window
+                var remaining = TimeSpan.FromMinutes(WINDOW_MINUTES) - (now - entry.FirstAttempt);
+
+                // Safety check: prevent negative or invalid cache expiration
+                if (remaining <= TimeSpan.Zero)
+                {
+                    remaining = TimeSpan.FromSeconds(1);
+                }
+
+                // Update cache with new count and remaining lifetime
+                _cache.Set(key, entry, remaining);
+
+                _logger.LogInformation(
+                    "RateLimit HIT | IP: {IP} | Count: {Count}/{Limit} | ElapsedSec: {Elapsed}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    (now - entry.FirstAttempt).TotalSeconds
+                );
+            }
+
+            // ===============================
+            // ENFORCEMENT
+            // Block request if limit exceeded
+            // ===============================
+            if (entry.Count > LIMIT)
+            {
+                _logger.LogWarning(
+                    "RateLimit BLOCKED | IP: {IP} | Count: {Count} exceeded limit {Limit} | WindowStart: {FirstAttempt}",
+                    ip,
+                    entry.Count,
+                    LIMIT,
+                    entry.FirstAttempt
+                );
+
+                TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                return View("Index", model);
+            }
+
+            // ===============================
+            // END RATE LIMITER
+            // ===============================
+
+
             if (ModelState.IsValid)
             {
                 _logger.LogInformation("ModelState is valid for registration submission.");
@@ -158,7 +253,7 @@ namespace MidStateShuttleService.Controllers
                     if (duplicateDays.Any())
                     {
                         _logger.LogWarning("Duplicate request days detected: {DuplicateDays}", string.Join(", ", duplicateDays));
-                        TempData["Error"] = "Each request day (Monday–Thursday) can only be selected once.";
+                        TempData["Error"] = "Each request day (Mondayï¿½Thursday) can only be selected once.";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
                     }
@@ -303,8 +398,8 @@ namespace MidStateShuttleService.Controllers
 
             // Get the route including Pickup and Dropoff locations
             Routes route = _context.Routes
-                .Include(r => r.PickUpLocation)    // assuming navigation property
-                .Include(r => r.DropOffLocation)   // assuming navigation property
+                .Include(r => r.PickUpLocation)
+                .Include(r => r.DropOffLocation)
                 .FirstOrDefault(r => r.RouteID == routeId);
 
             if (route != null)
@@ -815,7 +910,7 @@ namespace MidStateShuttleService.Controllers
                             }
                             else
                             {
-                                rideRows += $@"
+                                rideRows += $@"    
                                 <tr>
                                     <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
                                     <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
@@ -849,57 +944,57 @@ namespace MidStateShuttleService.Controllers
             _logger.LogInformation("BuildEmailForRegisterSubmit completed for RegistrationId: {RegistrationId}", id);
 
             return $@"
-<html>
-<body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
+            <html>
+            <body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
 
-    <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
-        <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
-        <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
-    </div>
+                <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
+                    <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
+                    <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
+                </div>
 
-    <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
+                <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
 
-        <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
+                    <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
 
-        <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
-            <tr>
-                <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
-                <td style='padding: 6px 0;'>{sId}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Email</td>
-                <td style='padding: 6px 0;'>{registration.Email}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Phone</td>
-                <td style='padding: 6px 0;'>{registration.Phone}</td>
-            </tr>
-            <tr>
-                <td style='padding: 6px 0; color: #888;'>Rider Status</td>
-                <td style='padding: 6px 0;'>
-                    <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
-                        {isAdultText}
-                    </span>
-                </td>
-            </tr>
-        </table>
+                    <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
+                            <td style='padding: 6px 0;'>{sId}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Email</td>
+                            <td style='padding: 6px 0;'>{registration.Email}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Phone</td>
+                            <td style='padding: 6px 0;'>{registration.Phone}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Rider Status</td>
+                            <td style='padding: 6px 0;'>
+                                <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
+                                    {isAdultText}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
 
-        <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
+                    <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
 
-        <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
+                    <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
 
-        {scheduleSections}
+                    {scheduleSections}
 
-        <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
 
-        <p style='margin: 0; font-size: 13px; color: #888;'>
-            This request will be reviewed by the shuttle program and is not guaranteed.
-        </p>
+                    <p style='margin: 0; font-size: 13px; color: #888;'>
+                        This request will be reviewed by the shuttle program and is not guaranteed.
+                    </p>
 
-    </div>
+                </div>
 
-</body>
-</html>";
+            </body>
+            </html>";
         }
 
         /// <summary>

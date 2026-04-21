@@ -57,10 +57,29 @@ namespace MidStateShuttleService
 
             builder.Services.AddAuthorization();
 
+            builder.Services.AddMemoryCache();
+
             builder.Services.AddRazorPages()
                 .AddMicrosoftIdentityUI();
 
-            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            // Always have console logging (safe default)
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+
+            if (!builder.Environment.IsDevelopment())
+            {
+                // Only attempt Azure logging outside of dev
+                var connectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+
+                if (!string.IsNullOrWhiteSpace(connectionString))
+                {
+                    builder.Services.AddOpenTelemetry()
+                        .UseAzureMonitor(options =>
+                        {
+                            options.ConnectionString = connectionString;
+                        });
+                }
+            }
 
             var app = builder.Build();
 

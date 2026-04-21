@@ -168,6 +168,8 @@
                 </button>
             </div>
 
+            <label>Select the day of the week.</label>
+
             <!-- DAY DROPDOWN -->
             <div class="form-group mb-3">
                 <select class="dropdown-midstate day-select"
@@ -204,6 +206,8 @@
              data-ride-index="__rideIndex__">
 
             <!-- PICKUP + DROPOFF -->
+            <label>Select a Pick-up Location and Drop-off Location</label>
+
             <div class="row mb-2">
 
                 <div class="col-12 col-md-6 mb-2">
@@ -238,6 +242,8 @@
 
             </div>
 
+            <label>Select a pre-existing route, if there are none or would like to request a route at a different time, select an Arrival Time</label>
+
             <!-- ROUTE -->
             <div class="mb-2">
 
@@ -256,7 +262,7 @@
                 <select class="dropdown-midstate time-select"
                         name="DaySchedules[__dayIndex__].Rides[__rideIndex__].DropOffTime">
 
-                    <option value="">Select Time (Optional)</option>
+                    <option value="">Select Arrival Time (Optional)</option>
 
                     @if (Model.TimeOptions != null)
                     {

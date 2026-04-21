@@ -60,9 +60,11 @@
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
 
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="route-card-inner d-flex flex-column flex-md-row justify-content-between gap-3">
 
-                            <div>
+                            <!-- LEFT SIDE (INFO) -->
+                            <div class="route-info flex-grow-1">
+
                                 <h4 class="mb-1">
                                     @route.PickUpLocation.ToStringPickup() → @route.DropOffLocation.ToStringDropoff()
                                 </h4>
@@ -73,7 +75,6 @@
                                     <span><strong>Pickup:</strong> @route.ToStringPickUpTime()</span>
                                     <span> | </span>
                                     <span><strong>Dropoff:</strong> @route.ToStringDropOffTime()</span>
-                                    <span> | </span>
                                 </div>
 
                                 @if (!string.IsNullOrEmpty(route.AdditionalDetails))
@@ -82,61 +83,65 @@
                                         <strong>Notes:</strong> @route.AdditionalDetails
                                     </div>
                                 }
+
                             </div>
 
-                            <div class="text-end">
+                            <!-- RIGHT SIDE (ACTIONS) -->
+                            <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
+
                                 <a asp-controller="Register"
                                    asp-action="ViewPassengerList"
                                    asp-route-routeId="@route.RouteID"
-                                   class="btn btn-midstate btn-sm mb-2">
-                                    <i class="bi bi-people-fill me-1"></i> Reservations
+                                   class="btn-midstate btn-midstatehover">
+                                    <i class="bi bi-people-fill btn-icon"></i>
+                                    <span class="btn-text">Reservations</span>
                                 </a>
 
                                 @if (User.IsInRole("Admin"))
                                 {
-                                    <div>
-                                        <a asp-controller="Routes"
-                                           asp-action="Edit"
-                                           asp-route-id="@route.RouteID"
-                                           class="btn btn-midstate btn-sm me-2">
-                                            <i class="bi bi-pencil-fill me-1"></i> Update
-                                        </a>
+                                    <a asp-controller="Routes"
+                                       asp-action="Edit"
+                                       asp-route-id="@route.RouteID"
+                                       class="btn-midstate btn-midstatehover">
+                                        <i class="bi bi-pencil-fill btn-icon"></i>
+                                        <span class="btn-text">Update</span>
+                                    </a>
 
-                                        <a href="/Communicate?routeId=@route.RouteID"
-                                            class="btn-midstate btn-primary"
-                                            style="white-space: nowrap;">
-                                            Message Riders
-                                        </a>
+                                    <a href="/Communicate?routeId=@route.RouteID"
+                                       class="btn-midstate btn-midstatehover">
+                                        <i class="bi bi-chat-dots-fill btn-icon"></i>
+                                        <span class="btn-text">Message Riders</span>
+                                    </a>
 
-                                        @if ((bool?)ViewData["Archives"] == true)
-                                        {
-                                            <form asp-action="Unarchive" method="post">
-                                                <input type="hidden" name="id" value="@route.RouteID" />
-                                                <button class="btn btn-midstate btn-danger btn-sm" type="submit">Unarchive</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form asp-controller="Routes"
-                                                  asp-action="Delete"
-                                                  asp-route-id="@route.RouteID"
-                                                  method="post"
-                                                  style="display:inline;">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit"
-                                                        class="btn btn-midstate btn-sm me-2">
-                                                    Archive
-                                                </button>
-                                            </form>
-                                        }
-
-                                        
-                                    </div>
+                                    @if ((bool?)ViewData["Archives"] == true)
+                                    {
+                                        <form asp-action="Unarchive" method="post">
+                                            <input type="hidden" name="id" value="@route.RouteID" />
+                                            <button class="btn-midstate btn-midstatehover" type="submit">
+                                                <i class="bi bi-arrow-up-circle-fill btn-icon"></i>
+                                                <span class="btn-text">Unarchive</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Routes"
+                                              asp-action="Delete"
+                                              asp-route-id="@route.RouteID"
+                                              method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn-midstate btn-midstatehover">
+                                                <i class="bi bi-archive-fill btn-icon"></i>
+                                                <span class="btn-text">Archive</span>
+                                            </button>
+                                        </form>
+                                    }
                                 }
+
                             </div>
 
                         </div>
-
                     </div>
                 }
             }
