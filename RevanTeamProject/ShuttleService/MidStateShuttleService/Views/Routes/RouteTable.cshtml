@@ -42,6 +42,37 @@
             }
         </div>
 
+        <!-- Route Filter -->
+        <div class="form-paper mb-3 p-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="mb-1"><strong>Pickup Location</strong></label>
+                    <select id="routePickupFilter" class="form-control">
+                        <option value="">All Pickup Locations</option>
+
+                        @foreach (var loc in routes.Select(r => r.PickUpLocation).DistinctBy(l => l.LocationId))
+                        {
+                            <option value="@loc.LocationId">@loc.ToStringPickup()</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="mb-1"><strong>Pickup Time Range</strong></label>
+
+                    <div class="d-flex gap-2">
+                        <input id="routeTimeFrom"
+                               type="time"
+                               class="form-control" />
+
+                        <input id="routeTimeTo"
+                               type="time"
+                               class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="routesTableBody">
 
             @if (Model == null || !Model.Any())
@@ -56,6 +87,7 @@
                 {
                     <div class="form-paper mb-4 p-4 position-relative route-card"
                          data-pickup="@route.PickUpLocationID"
+                         data-time="@route.PickUpTime?.ToString(@"hh\:mm")"
                          data-dropoff="@route.DropOffLocationID"
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
@@ -155,3 +187,4 @@
 
 <script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
+<script src="~/js/RoutesManagement.js"></script>
