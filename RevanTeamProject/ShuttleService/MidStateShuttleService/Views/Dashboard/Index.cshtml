@@ -35,13 +35,15 @@
                 </div>
             </a>
 
-            <div class="dashboard-stat-card bg-warning text-white shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-envelope fs-1 mb-2"></i>
-                    <h3 class="display-5">0</h3>
-                    <p class="mb-0">Mail Check Ins</p>
+            <a asp-controller="Reports" asp-action="Reports" class="text-decoration-none">
+                <div class="dashboard-stat-card bg-warning text-white shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-envelope fs-1 mb-2"></i>
+                        <h3 class="display-5">@Model.PastDayMail</h3>
+                        <p class="mb-0">Mail count today</p>
+                    </div>
                 </div>
-            </div>
+            </a>
 
             <a asp-controller="Register" asp-action="ViewAll" class="text-decoration-none">
                 <div class="dashboard-stat-card bg-danger text-white shadow-sm">
