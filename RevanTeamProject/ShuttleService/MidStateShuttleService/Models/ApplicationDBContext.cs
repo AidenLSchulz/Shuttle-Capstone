@@ -61,16 +61,9 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(b => b.PassengerCapacity)
                 .IsRequired();
 
-            entity.Property(b => b.DriverId)
-                .IsRequired();
-
             entity.Property(b => b.IsActive)
                 .HasDefaultValue(false);
 
-            entity.HasOne(b => b.Driver)
-                .WithMany()
-                .HasForeignKey(b => b.DriverId)
-                .IsRequired();
         });
 
         // Driver Table

@@ -105,7 +105,6 @@ namespace MidStateShuttleService.Service
                         BusId = Convert.ToInt32(row["BusID"]),
                         BusNo = Convert.ToInt32(row["BusNo"]),
                         PassengerCapacity = Convert.ToInt32(row["PassengerCapacity"]),
-                        DriverId = Convert.ToInt32(row["DriverID"]),
                         IsActive = Convert.ToBoolean(row["IsActive"])
 
                     });
