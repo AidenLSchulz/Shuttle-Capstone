@@ -55,7 +55,7 @@ namespace MidStateShuttleService.Controllers
             // Prevents spam submissions per IP address using a fixed time window
             // ===============================
 
-            const int LIMIT = 15;               // Max allowed requests per window
+            const int LIMIT = 20;               // Max allowed requests per window
             const int WINDOW_MINUTES = 5;       // Time window length
 
             var now = DateTime.UtcNow;
