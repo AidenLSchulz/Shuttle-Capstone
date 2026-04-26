@@ -27,6 +27,29 @@
 
 <div class="form-container tiled-background-2">
     <div class="form-paper">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        }
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -36,9 +59,36 @@
 
             @if (User.IsInRole("Admin"))
             {
-                <a asp-controller="Routes" asp-action="Create" class="btn btn-midstate">
-                    Add Route
-                </a>
+                <div class="d-flex gap-2">
+                    <!-- Add Route -->
+                    <a asp-controller="Routes" asp-action="Create" class="btn btn-midstate">
+                        Add Route
+                    </a>
+
+                    <!-- Upload Routes -->
+                    <form asp-controller="Routes"
+                          asp-action="UploadRoutesExcel"
+                          method="post"
+                          enctype="multipart/form-data"
+                          style="display:inline;">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="file"
+                               name="excelFile"
+                               id="excelFileInput"
+                               accept=".xlsx"
+                               style="display:none;"
+                               onchange="this.form.submit();" />
+
+                        <button type="button"
+                                class="btn btn-midstate"
+                                title="Upload .xlsx file with DEP, START, END, ARRIVAL, MON–THUR columns"
+                                onclick="document.getElementById('excelFileInput').click();">
+                            Upload Routes
+                        </button>
+                    </form>
+                </div>
             }
         </div>
 
@@ -185,6 +235,10 @@
     </div>
 </div>
 
-<script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(a => a.remove());
+    }, 8000);
+</script>
 <script src="~/js/RoutesManagement.js"></script>
