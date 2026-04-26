@@ -19,9 +19,6 @@ public partial class Bus
 
     public int? PassengerCapacity { get; set; }
 
-    public int? DriverId { get; set; }
-
     public bool? IsActive { get; set; }
 
-    public virtual Driver Driver { get; set; }
 }

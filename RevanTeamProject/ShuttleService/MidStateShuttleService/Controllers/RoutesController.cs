@@ -205,20 +205,36 @@ namespace MidStateShuttleService.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin,Driver")]
-        public ActionResult ViewAll(bool viewArchived = false)
+        public ActionResult ViewAll(bool viewArchived = false, string dayOfWeek = null, string pickupLocation = null)
         {
             _logger.LogInformation("Routes ViewAll action called. ViewArchived: {ViewArchived}", viewArchived);
 
-            var routes = _context.Routes
+            // Unfiltered — used to populate dropdown options
+            var allRoutes = _context.Routes
                 .Include(r => r.PickUpLocation)
                 .Include(r => r.DropOffLocation)
                 .Where(r => r.IsActive == !viewArchived)
                 .ToList();
 
-            ViewData["Archives"] = viewArchived;
+            // Filtered — used for the route cards
+            var routes = allRoutes.AsEnumerable();
 
-            _logger.LogInformation("Routes ViewAll returning {RouteCount} routes.", routes.Count);
-            return View("RouteTable", routes);
+            if (!string.IsNullOrEmpty(dayOfWeek))
+                routes = routes.Where(r => r.DayOfWeek.ToString() == dayOfWeek);
+
+            if (!string.IsNullOrEmpty(pickupLocation))
+                routes = routes.Where(r => r.PickUpLocation.Name == pickupLocation);
+
+            routes = routes.OrderBy(r => r.PickUpTime ?? TimeSpan.MaxValue);
+
+            ViewData["Archives"] = viewArchived;
+            ViewData["SelectedDay"] = dayOfWeek;
+            ViewData["SelectedLocation"] = pickupLocation;
+            ViewData["AllDays"] = allRoutes.Select(r => r.DayOfWeek.ToString()).Distinct().ToList();
+            ViewData["AllPickupLocations"] = allRoutes.Select(r => r.PickUpLocation.Name).Distinct().OrderBy(n => n).ToList();
+
+            _logger.LogInformation("Routes ViewAll returning {RouteCount} routes.", routes.Count());
+            return View("RouteTable", routes.ToList());
         }
 
         [HttpGet]

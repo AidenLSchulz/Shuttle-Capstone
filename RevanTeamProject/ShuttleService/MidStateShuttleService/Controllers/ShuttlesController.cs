@@ -146,7 +146,6 @@ namespace MidStateShuttleService.Controllers
                 // Update only editable properties
                 existingBus.BusNo = bus.BusNo;
                 existingBus.PassengerCapacity = bus.PassengerCapacity;
-                existingBus.DriverId = bus.DriverId;
 
                 // Preserve existing IsActive value
                 _context.SaveChanges();

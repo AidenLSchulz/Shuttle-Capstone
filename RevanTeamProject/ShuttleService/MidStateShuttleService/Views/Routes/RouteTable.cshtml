@@ -6,17 +6,30 @@
 }
 
 @{
+    var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday" };
+
     var routes = Model?
         .OrderBy(r => r.PickUpLocationID)
         .ThenBy(r => r.PickUpTime)
         .ToList();
-}
 
+    // Use ViewData for dropdowns so they always show all options regardless of active filters
+    var allDays = ViewData["AllDays"] as List<string> ?? new List<string>();
+    var allPickupLocations = ViewData["AllPickupLocations"] as List<string> ?? new List<string>();
+
+    // Still derive groupedByDay from Model for rendering the cards
+    var groupedByDay = (Model ?? Enumerable.Empty<MidStateShuttleService.Models.Routes>())
+        .GroupBy(r => r.DayOfWeek)
+        .OrderBy(g => Array.IndexOf(days, g.Key.ToString()));
+
+    var selectedDay = ViewData["SelectedDay"]?.ToString();
+    var selectedLocation = ViewData["SelectedLocation"]?.ToString();
+    var isArchived = (bool?)ViewData["Archives"] == true;
+}
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
-<!-- If true use the inverted version to show a difference -->
-@if ((bool?)ViewData["Archives"] == true)
+@if (isArchived)
 {
     <style>
         .tiled-background-2 {
@@ -42,6 +55,56 @@
             }
         </div>
 
+        <!-- ── Filter bar ─────────────────────────────────────── -->
+        <form method="get"
+              asp-controller="Routes"
+              asp-action="ViewAll"
+              class="filter-bar"
+              role="search"
+              aria-label="Filter routes">
+
+            <input type="hidden" name="viewArchived" value="@(isArchived ? "true" : "false")" />
+
+            <div class="filter-group">
+                <label for="filter-day">Day of Week</label>
+                <select class="dropdown-midstate" id="filter-day" name="dayOfWeek" aria-label="Filter by day of week">
+                    <option value="">All Days</option>
+                    @foreach (var d in days)
+                    {
+                        if (allDays.Contains(d))
+                        {
+                            <option value="@d" selected="@(selectedDay == d ? "selected" : null)">@d</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-location">Pickup Location</label>
+                <select class="dropdown-midstate" id="filter-location" name="pickupLocation" aria-label="Filter by pickup location">
+                    <option value="">All Locations</option>
+                    @foreach (var loc in allPickupLocations)
+                    {
+                        <option value="@loc" selected="@(selectedLocation == loc ? "selected" : null)">@loc</option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn-midstate mt-1 mb-1" type="submit" aria-label="Search routes">
+                Search
+            </button>
+
+            <a class="btn-midstate mt-1 mb-1"
+               asp-controller="Routes"
+               asp-action="ViewAll"
+               asp-route-viewArchived="@(isArchived ? "true" : "false")"
+               aria-label="Clear filters">
+                ✕ Clear
+            </a>
+
+        </form>
+
+        <!-- ── Route cards ────────────────────────────────────── -->
         <div id="routesTableBody">
 
             @if (Model == null || !Model.Any())
@@ -113,7 +176,7 @@
                                         <span class="btn-text">Message Riders</span>
                                     </a>
 
-                                    @if ((bool?)ViewData["Archives"] == true)
+                                    @if (isArchived)
                                     {
                                         <form asp-action="Unarchive" method="post">
                                             <input type="hidden" name="id" value="@route.RouteID" />

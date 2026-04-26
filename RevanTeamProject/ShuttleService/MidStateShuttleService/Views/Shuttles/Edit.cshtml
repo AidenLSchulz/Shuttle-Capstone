@@ -34,17 +34,6 @@
                         <div id="PassengerCapacity-validation-message" class="validation-message">Please enter a valid passenger capacity.</div>
                     </div>
 
-                    <div class="input-fields">
-                        <label>Driver</label>
-                        <select asp-for="DriverId"
-                                asp-items="ViewBag.Drivers"
-                                class="form-control input--style-1" required>
-                            <option value="" disabled selected>--Select Driver--</option>
-                        </select>
-                        <div class="div-line"></div>
-                        <div id="DriverId-validation-message" class="validation-message">Please select a driver.</div>
-                    </div>
-
                     <div class="p-t-20">
                         <button type="submit" class="btn btn--radius btn--submit">Update Shuttle Info</button>
                         <button type="button" class="btn btn-primary"
