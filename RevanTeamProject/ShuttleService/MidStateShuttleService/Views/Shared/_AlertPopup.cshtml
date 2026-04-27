@@ -1,6 +1,7 @@
 ﻿@{
     var success = TempData["Success"] as string;
     var error = TempData["Error"] as string;
+    var code = TempData["Code"] as string;
 }
 
 @if (!string.IsNullOrEmpty(success))
@@ -10,7 +11,8 @@
          role="alert"
          aria-live="polite"
          aria-atomic="true"
-         tabindex="-1">
+         tabindex="-1"
+         data-alert-key="@code">
         @success
         <button type="button" class="close" data-dismiss="alert">
             <span>&times;</span>
@@ -20,31 +22,47 @@
 
 @if (!string.IsNullOrEmpty(error))
 {
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div id="errorAlert"
-             class="alert alert-danger alert-dismissible fade show"
-             role="alert"
-             aria-live="assertive"
-             aria-atomic="true"
-             tabindex="-1">
-            @error
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-        </div>
-    }
+    <div id="errorAlert"
+         class="alert alert-danger alert-dismissible fade show"
+         role="alert"
+         aria-live="assertive"
+         aria-atomic="true"
+         tabindex="-1"
+         data-alert-key="@code">
+        @error
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
 }
 
 <script>
-              document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
         var errorAlert = document.getElementById("errorAlert");
         var successAlert = document.getElementById("successAlert");
 
-        if (errorAlert) {
-            errorAlert.focus();
-        } else if (successAlert) {
-            successAlert.focus();
+        var activeAlert = errorAlert || successAlert;
+
+        if (activeAlert) {
+            var key = activeAlert.getAttribute("data-alert-key");
+
+            // If this code has already been shown, hide the alert immediately and bail
+            if (key && sessionStorage.getItem("shownAlert_" + key)) {
+                activeAlert.style.display = "none";
+                return;
+            }
+
+            // Mark this code as shown so it won't appear again on back/forward navigation
+            if (key) {
+                sessionStorage.setItem("shownAlert_" + key, "true");
+            }
+
+            activeAlert.focus();
+
+            // Clear the sessionStorage entry once the alert is dismissed manually
+            activeAlert.querySelector(".close").addEventListener("click", function () {
+                if (key) sessionStorage.removeItem("shownAlert_" + key);
+            });
         }
     });
 </script>

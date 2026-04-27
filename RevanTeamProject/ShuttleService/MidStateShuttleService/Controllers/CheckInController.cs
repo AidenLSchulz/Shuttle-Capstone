@@ -143,6 +143,7 @@ namespace MidStateShuttleService.Controllers
                 );
 
                 TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
+                TempData["Code"] = "E001CI";
                 ViewBag.Locations = GetLocationOptions();
                 return View(submittedCheckIn);
             }
@@ -160,6 +161,7 @@ namespace MidStateShuttleService.Controllers
                 ViewBag.Locations = GetLocationOptions();
 
                 TempData["Error"] = "Please fill out all required fields.";
+                TempData["Code"] = "E002CI";
 
                 return View(submittedCheckIn);
             }
@@ -171,10 +173,8 @@ namespace MidStateShuttleService.Controllers
 
             _logger.LogInformation("Check-in created successfully for CheckInId: {CheckInId}, Name: {Name}", submittedCheckIn.CheckInId, submittedCheckIn.Name);
 
-            int currentCheckInCount = HttpContext.Session.GetInt32("CheckInCount") ?? 0;
-            HttpContext.Session.SetInt32("CheckInCount", currentCheckInCount + 1);
-
             TempData["Success"] = "Check-in successful!";
+            TempData["Code"] = "S001CI";
 
             return RedirectToAction(nameof(CheckIn));
         }
@@ -220,6 +220,8 @@ namespace MidStateShuttleService.Controllers
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("EditCheckIn POST failed validation for CheckInId: {CheckInId}", submittedModel.CheckInId);
+                TempData["Error"] = "Please fill out all required fields.";
+                TempData["Code"] = "E003CI";
                 submittedModel.LocationOptions = GetLocationOptions();
                 return View(submittedModel);
             }
@@ -229,6 +231,8 @@ namespace MidStateShuttleService.Controllers
             if (existingCheckIn == null)
             {
                 _logger.LogWarning("EditCheckIn POST failed. Check-in not found for CheckInId: {CheckInId}", submittedModel.CheckInId);
+                TempData["Error"] = "Check-in not found.";
+                TempData["Code"] = "E004CI";
                 return FailedCheckIn("Check-in not found.");
             }
 
@@ -237,13 +241,14 @@ namespace MidStateShuttleService.Controllers
             existingCheckIn.FirstTime = submittedModel.FirstTime;
             existingCheckIn.LocationId = submittedModel.LocationId;
             existingCheckIn.IsActive = true;
-
-            // DEV NOTE: ViewModel stores UTC internally to keep DB timestamps consistent.
             existingCheckIn.Date = submittedModel.UtcDate;
 
             _checkInService.UpdateEntity(existingCheckIn);
 
             _logger.LogInformation("Check-in updated successfully for CheckInId: {CheckInId}", submittedModel.CheckInId);
+
+            TempData["Success"] = "Check-in updated successfully.";
+            TempData["Code"] = "S002CI";
 
             return RedirectToAction("ViewAll", "CheckIn");
         }
@@ -252,6 +257,8 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin,Driver")]
         public ActionResult ViewAll(bool viewArchived = false)
         {
+            TempData.Clear();
+
             _logger.LogInformation("ViewAll check-ins requested. viewArchived: {ViewArchived}", viewArchived);
 
             var checkins = _context.CheckIns

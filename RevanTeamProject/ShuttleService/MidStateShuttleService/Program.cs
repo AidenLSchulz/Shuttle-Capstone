@@ -13,7 +13,7 @@ using MidStateShuttleService.Services;
 
 namespace MidStateShuttleService
 {
-    public class Program
+    public partial class Program
     {
         public static async Task Main(string[] args)
         {
