@@ -226,6 +226,7 @@ namespace MidStateShuttleService.Controllers
                 );
 
                 TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
+                TempData["Code"] = "E001RG";
                 ViewBag.Terms = GetSchoolTermSelectList();
                 return View("Index", model);
             }
@@ -253,7 +254,8 @@ namespace MidStateShuttleService.Controllers
                     if (duplicateDays.Any())
                     {
                         _logger.LogWarning("Duplicate request days detected: {DuplicateDays}", string.Join(", ", duplicateDays));
-                        TempData["Error"] = "Each request day (Mondayï¿½Thursday) can only be selected once.";
+                        TempData["Error"] = "Each request day (Monday-Thursday) can only be selected once.";
+                        TempData["Code"] = "E005RG";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
                     }
@@ -262,19 +264,7 @@ namespace MidStateShuttleService.Controllers
                 // Skip ride/day validation if custom
                 if (!model.isCustom)
                 {
-                    // Ensure at least one ride exists
-                    bool hasRide = model.DaySchedules != null &&
-                                   model.DaySchedules.Any(d => d.Rides != null && d.Rides.Any());
-
-                    if (!hasRide)
-                    {
-                        _logger.LogWarning("Registration failed validation because no rides were provided.");
-                        TempData["Error"] = "At least one ride must be added to submit a registration.";
-                        ViewBag.Terms = GetSchoolTermSelectList();
-                        return View("Index", model);
-                    }
-
-                    // Ensure no request day has zero rides
+                    // Ensure no request day has zero rides — check this BEFORE the has-any-rides check
                     bool emptyDayExists = model.DaySchedules != null &&
                                           model.DaySchedules.Any(d => d.Rides == null || !d.Rides.Any());
 
@@ -282,6 +272,20 @@ namespace MidStateShuttleService.Controllers
                     {
                         _logger.LogWarning("Registration failed validation because at least one request day had zero rides.");
                         TempData["Error"] = "Every request day must contain at least one ride.";
+                        TempData["Code"] = "E003RG";
+                        ViewBag.Terms = GetSchoolTermSelectList();
+                        return View("Index", model);
+                    }
+
+                    // Ensure at least one ride exists overall
+                    bool hasRide = model.DaySchedules != null &&
+                                   model.DaySchedules.Any(d => d.Rides != null && d.Rides.Any());
+
+                    if (!hasRide)
+                    {
+                        _logger.LogWarning("Registration failed validation because no rides were provided.");
+                        TempData["Error"] = "At least one ride must be added to submit a registration.";
+                        TempData["Code"] = "E002RG";
                         ViewBag.Terms = GetSchoolTermSelectList();
                         return View("Index", model);
                     }
@@ -299,6 +303,7 @@ namespace MidStateShuttleService.Controllers
                 {
                     _logger.LogWarning("Registration failed validation because at least one ride was missing both route and drop-off time.");
                     TempData["Error"] = "Each ride must have either a route selected or a drop-off time.";
+                    TempData["Code"] = "E004RG";
                     ViewBag.Terms = GetSchoolTermSelectList();
                     return View("Index", model);
                 }
@@ -327,11 +332,15 @@ namespace MidStateShuttleService.Controllers
                         emailBody = BuildEmailForRegisterSubmit(model.RegistrationId);
                     }
 
-                    _emailServices.SendEmailToAdmin(
-                        "MSTC Shuttle Service Request Confirmation",
-                        emailBody,
-                        isHtml: true
-                    );
+                    if (_emailServices != null)
+                    {
+                        _emailServices.SendEmailToAdmin(
+                            "MSTC Shuttle Service Request Confirmation",
+                            emailBody,
+                            isHtml: true
+                        );
+                    }
+                    
 
                     _logger.LogInformation("Admin email sent for RegistrationId: {RegistrationId}", model.RegistrationId);
 
@@ -372,6 +381,8 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult ViewAll(bool viewArchived = false)
         {
+            TempData.Clear();
+
             _logger.LogInformation("ViewAll action called. viewArchived: {ViewArchived}", viewArchived);
 
             var registrations = _context.RegisterModels
@@ -517,17 +528,14 @@ namespace MidStateShuttleService.Controllers
         public IActionResult EditSave(RegisterModel model)
         {
             _logger.LogInformation("EditSave action called for RegistrationId: {RegistrationId}", model?.RegistrationId);
-
             LocationServices ls = new LocationServices(_context);
 
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("EditSave ModelState invalid for RegistrationId: {RegistrationId}", model?.RegistrationId);
-
                 ViewBag.Terms = GetSchoolTermSelectList();
                 model.LocationNames = ls.GetLocationNames();
                 model.TimeOptions = GetTimeSelectList();
-
                 return View("Details", model);
             }
 
@@ -542,7 +550,77 @@ namespace MidStateShuttleService.Controllers
                 return NotFound();
             }
 
-            // Update Registration fields
+            // ===============================
+            // VALIDATION
+            // ===============================
+
+            // Ensure at least one day schedule exists
+            bool hasSchedule = model.DaySchedules != null && model.DaySchedules.Any();
+            if (!hasSchedule)
+            {
+                _logger.LogWarning("EditSave failed validation: no day schedules for RegistrationId: {RegistrationId}", model.RegistrationId);
+                TempData["Error"] = "At least one request day must be included.";
+                TempData["Code"] = "E006RG";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                model.LocationNames = ls.GetLocationNames();
+                model.TimeOptions = GetTimeSelectList();
+                return View("Details", model);
+            }
+
+            // Ensure no duplicate weekdays
+            var duplicateDays = model.DaySchedules
+                .GroupBy(d => d.WeekDay)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateDays.Any())
+            {
+                _logger.LogWarning("EditSave failed validation: duplicate days {Days} for RegistrationId: {RegistrationId}", string.Join(", ", duplicateDays), model.RegistrationId);
+                TempData["Error"] = "Each request day (Monday-Thursday) can only be selected once.";
+                TempData["Code"] = "E007RG";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                model.LocationNames = ls.GetLocationNames();
+                model.TimeOptions = GetTimeSelectList();
+                return View("Details", model);
+            }
+
+            // Ensure no day has zero rides
+            bool emptyDayExists = model.DaySchedules.Any(d => d.Rides == null || !d.Rides.Any());
+            if (emptyDayExists)
+            {
+                _logger.LogWarning("EditSave failed validation: a day has no rides for RegistrationId: {RegistrationId}", model.RegistrationId);
+                TempData["Error"] = "Every request day must contain at least one ride.";
+                TempData["Code"] = "E008RG";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                model.LocationNames = ls.GetLocationNames();
+                model.TimeOptions = GetTimeSelectList();
+                return View("Details", model);
+            }
+
+            // Ensure each ride has either a route or a drop-off time
+            bool invalidRide = model.DaySchedules.Any(d =>
+                d.Rides != null &&
+                d.Rides.Any(r =>
+                    r.RouteId == null &&
+                    string.IsNullOrWhiteSpace(r.DropOffTime.ToString())));
+
+            if (invalidRide)
+            {
+                _logger.LogWarning("EditSave failed validation: a ride is missing route and time for RegistrationId: {RegistrationId}", model.RegistrationId);
+                TempData["Error"] = "Each ride must have either a route selected or a drop-off time.";
+                TempData["Code"] = "E009RG";
+                ViewBag.Terms = GetSchoolTermSelectList();
+                model.LocationNames = ls.GetLocationNames();
+                model.TimeOptions = GetTimeSelectList();
+                return View("Details", model);
+            }
+
+            // ===============================
+            // END VALIDATION
+            // ===============================
+
+            // Update registration fields
             existing.Term = model.Term;
             existing.LengthOfRequest = model.LengthOfRequest;
             existing.AgreeTerms = model.AgreeTerms;
@@ -552,9 +630,8 @@ namespace MidStateShuttleService.Controllers
             existing.StudentId = model.StudentId;
             existing.Name = model.Name;
 
-            // Clear existing structure
+            // Clear and rebuild day schedules
             existing.DaySchedules.Clear();
-
             foreach (var modelDay in model.DaySchedules)
             {
                 var newDay = new RequestDay
@@ -572,7 +649,6 @@ namespace MidStateShuttleService.Controllers
                         DropOffTime = modelRide.DropOffTime,
                         RouteId = modelRide.RouteId
                     };
-
                     newDay.Rides.Add(newRide);
                 }
 
@@ -580,17 +656,15 @@ namespace MidStateShuttleService.Controllers
             }
 
             _context.SaveChanges();
-
             _logger.LogInformation("EditSave completed successfully for RegistrationId: {RegistrationId}", existing.RegistrationId);
-            return RedirectToAction("Details",
-                new { registrationId = existing.RegistrationId });
+
+            TempData["Success"] = "Registration updated successfully.";
+            TempData["Code"] = "S001RG";
+
+            return RedirectToAction("Details", new { registrationId = existing.RegistrationId });
         }
 
-        /// <summary>
-        /// Editing a Special Request
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -614,7 +688,35 @@ namespace MidStateShuttleService.Controllers
                 return NotFound();
             }
 
-            // Update only special request fields
+            // ===============================
+            // VALIDATION
+            // ===============================
+
+            // Ensure custom message is not empty
+            if (string.IsNullOrWhiteSpace(model.customMessage))
+            {
+                _logger.LogWarning("SpecialEditSave failed validation: missing custom message for RegistrationId: {RegistrationId}", model.RegistrationId);
+                TempData["Error"] = "A custom message is required for special requests.";
+                TempData["Code"] = "E010RG";
+                ViewBag.Terms = GetSchoolTermSelectList(true);
+                return View("SpecialDetails", model);
+            }
+
+            // Ensure custom date is not in the past
+            if (model.customDate.HasValue && model.customDate.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+            {
+                _logger.LogWarning("SpecialEditSave failed validation: custom date in the past for RegistrationId: {RegistrationId}", model.RegistrationId);
+                TempData["Error"] = "The request date cannot be in the past.";
+                TempData["Code"] = "E011RG";
+                ViewBag.Terms = GetSchoolTermSelectList(true);
+                return View("SpecialDetails", model);
+            }
+
+            // ===============================
+            // END VALIDATION
+            // ===============================
+
+            // Update special request fields
             existing.Term = model.Term;
             existing.customDate = model.customDate;
             existing.customTime1 = model.customTime1;
@@ -626,10 +728,12 @@ namespace MidStateShuttleService.Controllers
             existing.Phone = model.Phone;
 
             _context.SaveChanges();
-
             _logger.LogInformation("SpecialEditSave completed successfully for RegistrationId: {RegistrationId}", existing.RegistrationId);
-            return RedirectToAction("SpecialDetails",
-                new { registrationId = existing.RegistrationId });
+
+            TempData["Success"] = "Special request updated successfully.";
+            TempData["Code"] = "S002RG";
+
+            return RedirectToAction("SpecialDetails", new { registrationId = existing.RegistrationId });
         }
 
         private List<SelectListItem> GetTimeSelectList()
@@ -734,12 +838,13 @@ namespace MidStateShuttleService.Controllers
         public IActionResult Unarchive(int id)
         {
             _logger.LogInformation("Unarchive action called for RegistrationId: {RegistrationId}", id);
-
             var registration = _context.RegisterModels.Find(id);
 
             if (registration == null)
             {
                 _logger.LogWarning("Unarchive could not find RegistrationId: {RegistrationId}", id);
+                TempData["Error"] = "Registration not found.";
+                TempData["Code"] = "E012RG";
                 return NotFound();
             }
 
@@ -747,6 +852,8 @@ namespace MidStateShuttleService.Controllers
             _context.SaveChanges();
 
             _logger.LogInformation("Unarchive completed for RegistrationId: {RegistrationId}", id);
+            TempData["Success"] = "Registration unarchived successfully.";
+            TempData["Code"] = "S003RG";
             return RedirectToAction("ViewAll", new { viewArchived = true });
         }
 
@@ -755,17 +862,21 @@ namespace MidStateShuttleService.Controllers
         public IActionResult ArchiveRegistration(int id)
         {
             _logger.LogInformation("ArchiveRegistration action called for RegistrationId: {RegistrationId}", id);
-
             var registration = _context.RegisterModels.FirstOrDefault(r => r.RegistrationId == id);
+
             if (registration == null)
             {
                 _logger.LogWarning("ArchiveRegistration could not find RegistrationId: {RegistrationId}", id);
+                TempData["Error"] = "Registration not found.";
+                TempData["Code"] = "E013RG";
                 return NotFound();
             }
 
             if (!User.IsInRole("Admin"))
             {
                 _logger.LogWarning("ArchiveRegistration forbidden for RegistrationId: {RegistrationId}. User is not Admin.", id);
+                TempData["Error"] = "You do not have permission to archive registrations.";
+                TempData["Code"] = "E014RG";
                 return Forbid();
             }
 
@@ -773,8 +884,11 @@ namespace MidStateShuttleService.Controllers
             _context.SaveChanges();
 
             _logger.LogInformation("ArchiveRegistration completed for RegistrationId: {RegistrationId}", id);
+            TempData["Success"] = "Registration archived successfully.";
+            TempData["Code"] = "S004RG";
             return RedirectToAction("ViewAll");
         }
+
         private JsonResult GetRouteInfo(int pickUpLocationId, int dropOffLocationId)
         {
             _logger.LogInformation("GetRouteInfo called. PickUpLocationId: {PickUpLocationId}, DropOffLocationId: {DropOffLocationId}", pickUpLocationId, dropOffLocationId);
