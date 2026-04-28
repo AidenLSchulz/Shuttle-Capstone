@@ -41,9 +41,12 @@ public class CheckInCreateTests
             cache
         );
 
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
+
         controller.ControllerContext = new ControllerContext
         {
-            HttpContext = new DefaultHttpContext()
+            HttpContext = httpContext
         };
 
         controller.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
@@ -71,7 +74,7 @@ public class CheckInCreateTests
             DropOffLocationId = 2
         };
 
-        for (int i = 0; i <= 16; i++)
+        for (int i = 0; i < 25; i++)
         {
             controller.CheckIn(model);
         }
