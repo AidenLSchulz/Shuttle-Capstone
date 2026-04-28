@@ -64,6 +64,11 @@ jobs:
         run: dotnet test RevanTeamProject/ShuttleService/ShuttleUnitTest/ShuttleUnitTest.csproj --configuration Release --verbosity normal
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.TEST_CONNECTION_STRING }}
+          AzureAd__ClientId: test-client-id
+          AzureAd__TenantId: test-tenant-id
+          AzureAd__Instance: https://login.microsoftonline.com/
+          AzureAd__CallbackPath: /signin-oidc
+          
       - name: Publish
         run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish
 
