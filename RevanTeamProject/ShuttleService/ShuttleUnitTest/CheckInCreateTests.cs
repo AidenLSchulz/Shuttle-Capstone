@@ -62,12 +62,18 @@ public class CheckInCreateTests
     public void CheckIn_RateLimitExceeded_ReturnsE001CI()
     {
         var controller = CreateController();
-        var model = new CheckIn { Name = "John", StudentId = "12345" };
 
-        ViewResult lastResult = null;
+        var model = new CheckIn
+        {
+            Name = "John",
+            StudentId = "12345678",
+            LocationId = 1,
+            DropOffLocationId = 2
+        };
+
         for (int i = 0; i <= 16; i++)
         {
-            lastResult = controller.CheckIn(model) as ViewResult;
+            controller.CheckIn(model);
         }
 
         Assert.Equal("E001CI", controller.TempData["Code"]);
