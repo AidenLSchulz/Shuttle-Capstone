@@ -21,8 +21,11 @@ public class DashboardAuthorizationTests : IClassFixture<WebApplicationFactory<P
 
         var response = await client.GetAsync("/Dashboard");
 
-        // Assert — redirects to Microsoft login
-        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
+        Assert.True(
+            response.StatusCode == System.Net.HttpStatusCode.Redirect ||
+            response.StatusCode == System.Net.HttpStatusCode.Found
+        );
+
         Assert.Contains("login.microsoftonline.com", response.Headers.Location?.ToString());
     }
 }
