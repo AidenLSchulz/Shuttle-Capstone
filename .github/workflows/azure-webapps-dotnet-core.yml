@@ -60,6 +60,12 @@ jobs:
       - name: Build
         run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release --no-restore
 
+      - name: Run unit tests  
+        run: dotnet test ShuttleUnitTest/ShuttleUnitTest.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Publish
+        run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish
+
       - name: Publish
         run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish
 
