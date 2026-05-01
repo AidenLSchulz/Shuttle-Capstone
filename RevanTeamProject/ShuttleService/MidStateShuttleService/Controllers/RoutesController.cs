@@ -383,46 +383,60 @@ namespace MidStateShuttleService.Controllers
                         continue;
                     }
 
-                    // Default day (adjust if needed later)
-                    var dayOfWeek = WeekDay.Monday;
-
-                    // Duplicate check (active only)
-                    var duplicateExists = activeRoutes.Any(r =>
-                        r.PickUpLocationID == pickupLocation.LocationId &&
-                        r.DropOffLocationID == dropoffLocation.LocationId &&
-                        r.PickUpTime == pickupTime &&
-                        r.DropOffTime == dropoffTime &&
-                        r.DayOfWeek == dayOfWeek);
-
-                    if (duplicateExists)
+                    // DEV NOTE:
+                    // Create the same route for every weekday.
+                    // The Excel sheet only gives the route details, not the day,
+                    // so each valid row becomes Monday through Friday routes.
+                    var weekdays = new[]
                     {
-                        _logger.LogInformation(
-                            "Skipping duplicate route row {RowNumber}. START: {Start}, END: {End}",
-                            row.RowNumber(),
-                            startValue,
-                            endValue);
+    WeekDay.Monday,
+    WeekDay.Tuesday,
+    WeekDay.Wednesday,
+    WeekDay.Thursday,
+    WeekDay.Friday
+};
 
-                        duplicateCount++;
-                        continue;
+                    foreach (var dayOfWeek in weekdays)
+                    {
+                        // Duplicate check (active only)
+                        var duplicateExists = activeRoutes.Any(r =>
+                            r.PickUpLocationID == pickupLocation.LocationId &&
+                            r.DropOffLocationID == dropoffLocation.LocationId &&
+                            r.PickUpTime == pickupTime &&
+                            r.DropOffTime == dropoffTime &&
+                            r.DayOfWeek == dayOfWeek);
+
+                        if (duplicateExists)
+                        {
+                            _logger.LogInformation(
+                                "Skipping duplicate route row {RowNumber} for {DayOfWeek}. START: {Start}, END: {End}",
+                                row.RowNumber(),
+                                dayOfWeek,
+                                startValue,
+                                endValue);
+
+                            duplicateCount++;
+                            continue;
+                        }
+
+                        // Create ONE route per weekday for this Excel row.
+                        var route = new Routes
+                        {
+                            PickUpLocationID = pickupLocation.LocationId,
+                            DropOffLocationID = dropoffLocation.LocationId,
+                            PickUpTime = pickupTime,
+                            DropOffTime = dropoffTime,
+                            DayOfWeek = dayOfWeek,
+                            IsActive = true
+                        };
+
+                        _context.Routes.Add(route);
+                        activeRoutes.Add(route);
+                        createdCount++;
                     }
-
-                    // Create ONE route per row
-                    var route = new Routes
-                    {
-                        PickUpLocationID = pickupLocation.LocationId,
-                        DropOffLocationID = dropoffLocation.LocationId,
-                        PickUpTime = pickupTime,
-                        DropOffTime = dropoffTime,
-                        DayOfWeek = dayOfWeek,
-                        IsActive = true
-                    };
-
-                    _context.Routes.Add(route);
-                    activeRoutes.Add(route);
-                    createdCount++;
                 }
 
-                await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
 
                 _logger.LogInformation(
                     "Excel route upload complete. Created: {Created}, Skipped: {Skipped}, Duplicates: {Duplicates}",
