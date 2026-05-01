@@ -74,6 +74,7 @@ namespace MidStateShuttleService.Controllers
             {
                 RouteServices rs = new RouteServices(_context);
                 route.IsActive = true;
+                route.Enabled = false; 
                 rs.AddEntity(route);
 
                 _logger.LogInformation("Route created successfully.");
@@ -229,11 +230,54 @@ namespace MidStateShuttleService.Controllers
             var routes = _context.Routes
                 .Include(r => r.PickUpLocation)
                 .Include(r => r.DropOffLocation)
-                .Where(r => r.IsActive)
+                .Where(r => r.IsActive && r.Enabled)
                 .ToList();
 
             _logger.LogInformation("Routes ViewScheduleTable returning {RouteCount} routes.", routes.Count);
             return View("ScheduleTable", routes);
+        }
+
+        // GET: RoutesController/Delete/5
+        [Authorize(Roles = "Admin")]
+        public ActionResult ToggleVisibility(int id)
+        {
+            _logger.LogInformation("Routes ToggleVisibility GET action called for RouteId: {RouteId}", id);
+
+            try
+            {
+                var route = _context.Routes.Find(id);
+
+                if (route != null)
+                {
+                    route.Enabled = !route.Enabled;
+                    _context.SaveChanges();
+
+                    _logger.LogInformation("Route Visibility toggled successfully for RouteId: {RouteId}", id);
+                }
+                else
+                {
+                    // Handle the case where the route with the specified id is not found
+                    _logger.LogWarning("Routes ToggleVisibility could not find RouteId: {RouteId}", id);
+                    ModelState.AddModelError("", "Route not found.");
+                    return View();
+                }
+
+                return RedirectToAction("ViewAll");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                LogEvents.LogSqlException(ex, (IWebHostEnvironment)_context);
+                _logger.LogError(ex, "An error occurred while toggling Visilbity of the route.");
+
+                // Optionally add a model error for displaying an error message to the user
+                ModelState.AddModelError("", "An unexpected error occurred while toggling Visibility of the route, please try again.");
+
+                // Return the view with an error message
+                return View();
+            }
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
         // GET: RoutesController/Delete/5
@@ -333,6 +377,7 @@ namespace MidStateShuttleService.Controllers
             }
 
             route.IsActive = true;
+            route.Enabled = false;
             _context.SaveChanges();
 
             _logger.LogInformation("Route unarchived successfully for RouteId: {RouteId}", id);
@@ -351,7 +396,8 @@ namespace MidStateShuttleService.Controllers
                     r.PickUpLocationID == pickupId &&
                     r.DropOffLocationID == dropoffId &&
                     r.DayOfWeek == weekDay &&
-                    r.IsActive == true)
+                    r.IsActive == true &&
+                    r.Enabled == true)
                 .ToListAsync();
 
             var result = routes.Select(r => new

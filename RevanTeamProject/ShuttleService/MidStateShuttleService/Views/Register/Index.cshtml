@@ -49,17 +49,17 @@
                         <span asp-validation-for="LengthOfRequest" class="text-danger"></span>
                     </div>
 
+                    <!-- DAY CARDS CONTAINER -->
+                    <div id="dayCardsContainer"></div>
+
                     <!-- ADD DAY BUTTON -->
                     <div class="form-group">
-                        
-                        <button type="button" class="btn-midstate btn-primary" id="addDayBtn">
-                            Add Day +
+
+                        <button type="button" class="btn-midstate btn-primary w-100" id="addDayBtn">
+                            <i class="bi bi-calendar-plus"></i> Add Day
                         </button>
                         <span class="help-icon" data-help="Add a Day of the week to make rides for.">?</span>
                     </div>
-
-                    <!-- DAY CARDS CONTAINER -->
-                    <div id="dayCardsContainer"></div>
 
                     <!-- FULL NAME -->
                     <div class="form-group">
@@ -184,17 +184,16 @@
 
                 </select>
             </div>
+  
+            <!-- RIDES CONTAINER -->
+            <div class="ridesContainer mt-2"></div>
 
             <!-- ADD RIDE BUTTON -->
             <div class="form-group mb-3">
-                <button type="button"
-                        class="btn-midstate btn-secondary addRideBtn">
-                    Add Ride +
+                <button type="button" class="btn-midstate btn-secondary addRideBtn w-100">
+                    <i class="bi bi-plus-square"></i> Add Ride
                 </button>
             </div>
-
-            <!-- RIDES CONTAINER -->
-            <div class="ridesContainer mt-2"></div>
 
         </div>
     </template>

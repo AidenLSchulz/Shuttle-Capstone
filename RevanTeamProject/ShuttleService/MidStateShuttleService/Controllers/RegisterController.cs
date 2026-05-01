@@ -990,7 +990,10 @@ namespace MidStateShuttleService.Controllers
             string isAdultText = registration.IsAdult ? "Adult Rider" : "Minor Rider";
             string sId = string.IsNullOrEmpty(registration.StudentId) ? "N/A" : registration.StudentId;
 
+
             string scheduleSections = "";
+            string termText = registration.Term.ToString();
+            string lengthText = registration.LengthOfRequest.ToString();
 
             if (registration.DaySchedules != null)
             {
@@ -1090,6 +1093,14 @@ namespace MidStateShuttleService.Controllers
                                     {isAdultText}
                                 </span>
                             </td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Term</td>
+                            <td style='padding: 6px 0;'>{termText}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 6px 0; color: #888;'>Length of Request</td>
+                            <td style='padding: 6px 0;'>{lengthText}</td>
                         </tr>
                     </table>
 

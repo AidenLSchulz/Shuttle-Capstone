@@ -15,6 +15,8 @@
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
+<link rel="stylesheet" href="/css/RouteVisibility.css" />
+
 <!-- If true use the inverted version to show a difference -->
 @if ((bool?)ViewData["Archives"] == true)
 {
@@ -54,11 +56,24 @@
             {
                 @foreach (var route in routes)
                 {
-                    <div class="form-paper mb-4 p-4 position-relative route-card"
+                    <div class="form-paper mb-4 p-4 position-relative route-card @(!route.Enabled ? "route-disabled" : "")"
                          data-pickup="@route.PickUpLocationID"
                          data-dropoff="@route.DropOffLocationID"
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
+
+                        <!-- VISIBILITY INDICATOR (top-left) -->
+                        <div class="visibility-indicator">
+                            @if (route.Enabled)
+                            {
+                                <i class="bi bi-eye-fill text-success" title="Visible to students"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-eye-slash text-muted" title="Hidden from students"></i>
+                            }
+                            <br />
+                        </div>
 
                         <div class="route-card-inner d-flex flex-column flex-md-row justify-content-between gap-3">
 
@@ -112,6 +127,18 @@
                                         <i class="bi bi-chat-dots-fill btn-icon"></i>
                                         <span class="btn-text">Message Riders</span>
                                     </a>
+
+                                    <form asp-controller="Routes"
+                                          asp-action="ToggleVisibility"
+                                          asp-route-id="@route.RouteID"
+                                          method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn-midstate btn-midstatehover">
+                                            <i class="bi bi-eye-fill btn-icon"></i>
+                                            <span class="btn-text">Toggle Visibility</span>
+                                        </button>
+                                    </form>
 
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
