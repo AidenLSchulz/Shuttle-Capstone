@@ -1,0 +1,22 @@
+﻿/* THIS IS ONLY USED IN RouteTable.cshtml for the Enabled bool */
+.route-disabled {
+    background-color: white !important;
+    opacity: 0.66;
+}
+
+.visibility-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    font-size: 1.1rem;
+    background-color: #6d2b3d;
+    color: white;
+    padding: 5px 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: inherit;
+    line-height: 1;
+}
+
+    .visibility-indicator i {
+        color: white !important;
+    }

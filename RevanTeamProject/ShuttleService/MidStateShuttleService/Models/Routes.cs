@@ -51,6 +51,13 @@ namespace MidStateShuttleService.Models
 
         public WeekDay DayOfWeek { get; set; }
 
+        // NOTE: "Enabled" is NOT to be confused with IsActive (the archive bool variable)
+
+        /// <summary>
+        /// If the Route is visible and usable to students (should be disabled by default)
+        /// </summary>
+        public bool Enabled { get; set; }
+
         public string ToStringPickUp()
         {
             return PickUpLocation.Name;
