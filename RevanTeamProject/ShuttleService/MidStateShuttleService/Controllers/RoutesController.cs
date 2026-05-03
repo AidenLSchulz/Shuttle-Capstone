@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -322,6 +323,183 @@ namespace MidStateShuttleService.Controllers
 
             return RedirectToAction("Index", "Dashboard");
         }
+
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadRoutesExcel(IFormFile excelFile)
+        {
+            _logger.LogInformation("Excel route upload started.");
+
+            // Basic file validation
+            if (excelFile == null || excelFile.Length == 0)
+            {
+                _logger.LogWarning("No file provided for route upload.");
+                TempData["ErrorMessage"] = "Please select a valid Excel file.";
+                return RedirectToAction("ViewAll");
+            }
+
+            // Only allow .xlsx
+            var extension = Path.GetExtension(excelFile.FileName);
+            if (!extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Invalid file type uploaded: {FileName}", excelFile.FileName);
+                TempData["ErrorMessage"] = "Only .xlsx Excel files are supported.";
+                return RedirectToAction("ViewAll");
+            }
+
+            try
+            {
+                using var stream = new MemoryStream();
+                await excelFile.CopyToAsync(stream);
+                stream.Position = 0;
+
+                using var workbook = new XLWorkbook(stream);
+                var worksheet = workbook.Worksheet(1);
+
+                // Skip header row
+                var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
+
+                // Cache active locations
+                var locations = _context.Locations
+                    .Where(l => l.IsActive)
+                    .ToList();
+
+                // Only check duplicates against active routes
+                var activeRoutes = _context.Routes
+                    .Where(r => r.IsActive)
+                    .ToList();
+
+                int createdCount = 0;
+                int skippedCount = 0;
+                int duplicateCount = 0;
+
+                foreach (var row in rows)
+                {
+                    // B = DEP, C = START, D = END, E = ARRIVAL
+                    var depValue = row.Cell(2).GetString().Trim();
+                    var startValue = row.Cell(3).GetString().Trim();
+                    var endValue = row.Cell(4).GetString().Trim();
+                    var arrivalValue = row.Cell(5).GetString().Trim();
+
+                    // Skip incomplete rows
+                    if (string.IsNullOrWhiteSpace(depValue) ||
+                        string.IsNullOrWhiteSpace(startValue) ||
+                        string.IsNullOrWhiteSpace(endValue) ||
+                        string.IsNullOrWhiteSpace(arrivalValue))
+                    {
+                        _logger.LogWarning("Skipping Excel row {RowNumber}: missing required fields.", row.RowNumber());
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Match locations by abbreviation
+                    var pickupLocation = locations.FirstOrDefault(l =>
+                        l.Abbreviation.Equals(startValue, StringComparison.OrdinalIgnoreCase));
+
+                    var dropoffLocation = locations.FirstOrDefault(l =>
+                        l.Abbreviation.Equals(endValue, StringComparison.OrdinalIgnoreCase));
+
+                    if (pickupLocation == null || dropoffLocation == null)
+                    {
+                        _logger.LogWarning(
+                            "Skipping Excel row {RowNumber}: invalid location. START: {Start}, END: {End}",
+                            row.RowNumber(),
+                            startValue,
+                            endValue);
+
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Parse times (stored as Central — DO NOT convert)
+                    if (!TimeSpan.TryParse(depValue, out var pickupTime) ||
+                        !TimeSpan.TryParse(arrivalValue, out var dropoffTime))
+                    {
+                        _logger.LogWarning(
+                            "Skipping Excel row {RowNumber}: invalid time format. DEP: {DEP}, ARRIVAL: {ARRIVAL}",
+                            row.RowNumber(),
+                            depValue,
+                            arrivalValue);
+
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // DEV NOTE:
+                    // Create the same route for every weekday.
+                    // The Excel sheet only gives the route details, not the day,
+                    // so each valid row becomes Monday through Friday routes.
+                    var weekdays = new[]
+                    {
+    WeekDay.Monday,
+    WeekDay.Tuesday,
+    WeekDay.Wednesday,
+    WeekDay.Thursday,
+    WeekDay.Friday
+};
+
+                    foreach (var dayOfWeek in weekdays)
+                    {
+                        // Duplicate check (active only)
+                        var duplicateExists = activeRoutes.Any(r =>
+                            r.PickUpLocationID == pickupLocation.LocationId &&
+                            r.DropOffLocationID == dropoffLocation.LocationId &&
+                            r.PickUpTime == pickupTime &&
+                            r.DropOffTime == dropoffTime &&
+                            r.DayOfWeek == dayOfWeek);
+
+                        if (duplicateExists)
+                        {
+                            _logger.LogInformation(
+                                "Skipping duplicate route row {RowNumber} for {DayOfWeek}. START: {Start}, END: {End}",
+                                row.RowNumber(),
+                                dayOfWeek,
+                                startValue,
+                                endValue);
+
+                            duplicateCount++;
+                            continue;
+                        }
+
+                        // Create ONE route per weekday for this Excel row.
+                        var route = new Routes
+                        {
+                            PickUpLocationID = pickupLocation.LocationId,
+                            DropOffLocationID = dropoffLocation.LocationId,
+                            PickUpTime = pickupTime,
+                            DropOffTime = dropoffTime,
+                            DayOfWeek = dayOfWeek,
+                            IsActive = true
+                        };
+
+                        _context.Routes.Add(route);
+                        activeRoutes.Add(route);
+                        createdCount++;
+                    }
+                }
+
+                    await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Excel route upload complete. Created: {Created}, Skipped: {Skipped}, Duplicates: {Duplicates}",
+                    createdCount,
+                    skippedCount,
+                    duplicateCount);
+
+                TempData["SuccessMessage"] =
+                    $"{createdCount} routes created. {skippedCount} rows skipped. {duplicateCount} duplicates ignored.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing Excel route upload.");
+                TempData["ErrorMessage"] = "An error occurred while processing the file.";
+            }
+
+            return RedirectToAction("ViewAll");
+        }
+
 
         // POST: RoutesController/Delete/5
         [HttpPost]
