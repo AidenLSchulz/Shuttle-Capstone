@@ -310,30 +310,4 @@ public class RegisterCreateTests
             controller.TempData["Error"]
         );
     }
-
-    // =============================================
-    // Custom registration — skips ride/day validation
-    // =============================================
-
-    [Fact]
-    public void Register_IsCustomTrue_SkipsRideValidation()
-    {
-        // isCustom bypasses E002RG and E003RG checks entirely
-        var db = GetInMemoryDb();
-        var controller = CreateController(db);
-
-        var model = new RegisterModel
-        {
-            Name = "John",
-            Email = "john@test.com",
-            isCustom = true,
-            DaySchedules = new List<RequestDay>() // empty — would fail if not custom
-        };
-
-        controller.Register(model);
-
-        // Neither ride-count error should appear
-        Assert.NotEqual("E002RG", controller.TempData["Code"]);
-        Assert.NotEqual("E003RG", controller.TempData["Code"]);
-    }
 }

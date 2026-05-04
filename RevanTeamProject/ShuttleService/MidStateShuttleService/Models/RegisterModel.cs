@@ -18,10 +18,7 @@ namespace MidStateShuttleService.Models
         Winterim,
 
         [Display(Name = "Summer")]
-        Summer,
-
-        [Display(Name = "Other")]
-        Other
+        Summer
     }
 
     public enum LengthOfRequest
@@ -33,7 +30,10 @@ namespace MidStateShuttleService.Models
         FirstHalf,
 
         [Display(Name = "Last 8 Weeks")]
-        SecondHalf
+        SecondHalf,
+
+        [Display(Name = "Other")]
+        Other,
     }
 
     // !!**** Temporarily disabled validations, to be addressed in the next sprint. ****!!//
