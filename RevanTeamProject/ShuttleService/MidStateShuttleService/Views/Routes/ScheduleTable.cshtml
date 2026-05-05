@@ -1,14 +1,17 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Routes>
 @{
     ViewData["Title"] = "Route Schedule";
+    <!-- Sets page title -->
 }
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 <link rel="stylesheet" href="/css/HelpIcon.css" />
 <link rel="stylesheet" href="/css/RouteSchedule.css" />
+<!-- Styles for layout, inputs, help icons, and schedule display -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- jQuery + Bootstrap JS for UI interactions -->
 
 
 <div class="form-container tiled-background-1">
@@ -20,19 +23,21 @@
                 <p class="mb-0">View shuttle routes organized by day of the week.</p>
             </div>
         </div>
-
+        <!-- Header section -->
         @{
-            var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday"};
+            var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday" };
+            <!-- Defines display order for days -->
             var groupedByDay = Model
             .GroupBy(r => r.DayOfWeek)
             .OrderBy(g => Array.IndexOf(days, g.Key.ToString()));
-
+            <!-- Groups routes by day and sorts them -->
             // Collect unique pickup locations for filter dropdown
             var allPickupLocations = Model
             .Select(r => r.PickUpLocation.Name)
             .Distinct()
             .OrderBy(n => n)
             .ToList();
+            <!-- Builds unique pickup location list for filtering -->
         }
 
         @if (!Model.Any())
@@ -40,6 +45,7 @@
             <div class="form-paper p-3" role="status">
                 <p>There are currently no routes scheduled.</p>
             </div>
+            <!-- Empty state when no routes exist -->
         }
         else
         {
@@ -58,6 +64,7 @@
                             }
                         }
                     </select>
+                    <!-- Filters routes by selected day -->
                 </div>
 
                 <div class="filter-group">
@@ -69,15 +76,18 @@
                             <option value="@loc">@loc</option>
                         }
                     </select>
+                    <!-- Filters routes by pickup location -->
                 </div>
 
                 <button class="btn-midstate" id="filter-search" type="button" aria-label="Search schedule">
                     Search
                 </button>
+                <!-- Triggers filtering -->
 
                 <button class="btn-midstate" id="filter-clear" type="button" aria-label="Clear filters">
                     ✕ Clear
                 </button>
+                <!-- Clears all filters -->
             </div>
 
             <!-- ── Schedule content ──────────────────────────────── -->
@@ -92,6 +102,7 @@
                              data-day="@dayGroup.Key"
                              aria-labelledby="day-@dayKey"
                              tabindex="0">
+                        <!-- Section per day -->
 
                         <h4 class="mb-3" id="day-@dayKey">
                             <i class="bi bi-calendar-week me-2" aria-hidden="true"> </i>@dayGroup.Key
@@ -101,6 +112,7 @@
                             var groupedByPickup = dayGroup
                             .GroupBy(r => r.PickUpLocation.Name)
                             .OrderBy(g => g.Min(r => r.PickUpTime));
+                            <!-- Groups routes by pickup location -->
                         }
 
                         @foreach (var pickupGroup in groupedByPickup)
@@ -114,7 +126,7 @@
                                  id="@cardId"
                                  data-day="@dayGroup.Key"
                                  data-location="@pickupGroup.Key">
-
+                                <!-- Card for each pickup location -->
                                 <!-- Accordion toggle header -->
                                 <div class="route-card-header"
                                      id="@headerId"
@@ -170,6 +182,7 @@
                                                                         Message Riders
                                                                     </a>
                                                                 </td>
+                                                                <!-- Admin-only action -->
                                                             }
                                                         </tr>
                                                     }
@@ -192,3 +205,4 @@
 </div>
 
 <script src="/js/RouteSchedule.js"></script>
+<!-- Handles filtering and accordion behavior -->

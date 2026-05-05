@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    <!-- Sets page title and uses shared admin layout -->
 }
 
 @{
@@ -10,14 +11,15 @@
         .OrderBy(r => r.PickUpLocationID)
         .ThenBy(r => r.PickUpTime)
         .ToList();
+    <!-- Sorts routes by pickup location, then by pickup time -->
 }
 
-
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
+<!-- Loads shared dashboard navigation -->
 
 <link rel="stylesheet" href="/css/RouteVisibility.css" />
-
-<!-- If true use the inverted version to show a difference -->
+<!-- Custom styling for route visibility indicators -->
+<!-- Applies alternate background if viewing archived routes -->
 @if ((bool?)ViewData["Archives"] == true)
 {
     <style>
@@ -30,6 +32,7 @@
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- Header section -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2>Routes</h2>
@@ -41,11 +44,13 @@
                 <a asp-controller="Routes" asp-action="Create" class="btn btn-midstate">
                     Add Route
                 </a>
+                <!-- Admin-only button to create a new route -->
             }
         </div>
 
         <div id="routesTableBody">
 
+            <!-- Handles empty state -->
             @if (Model == null || !Model.Any())
             {
                 <div class="form-paper p-3">
@@ -62,7 +67,8 @@
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
 
-                        <!-- VISIBILITY INDICATOR (top-left) -->
+                        <!-- Route card container with data attributes for filtering -->
+                        <!-- Visibility indicator -->
                         <div class="visibility-indicator">
                             @if (route.Enabled)
                             {
@@ -77,12 +83,13 @@
 
                         <div class="route-card-inner d-flex flex-column flex-md-row justify-content-between gap-3">
 
-                            <!-- LEFT SIDE (INFO) -->
+                            <!-- Left side: route information -->
                             <div class="route-info flex-grow-1">
 
                                 <h4 class="mb-1">
                                     @route.PickUpLocation.ToStringPickup() → @route.DropOffLocation.ToStringDropoff()
                                 </h4>
+                                <!-- Displays formatted pickup and dropoff locations -->
 
                                 <div>
                                     <span><strong>Day:</strong> @route.DayOfWeek.ToString()</span>
@@ -91,17 +98,18 @@
                                     <span> | </span>
                                     <span><strong>Dropoff:</strong> @route.ToStringDropOffTime()</span>
                                 </div>
-
+                                <!-- Displays day and formatted times -->
                                 @if (!string.IsNullOrEmpty(route.AdditionalDetails))
                                 {
                                     <div class="mt-2 text-muted">
                                         <strong>Notes:</strong> @route.AdditionalDetails
                                     </div>
+                                    <!-- Optional additional route notes -->
                                 }
 
                             </div>
 
-                            <!-- RIGHT SIDE (ACTIONS) -->
+                            <!-- Right side: action buttons -->
                             <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
 
                                 <a asp-controller="Register"
@@ -111,7 +119,7 @@
                                     <i class="bi bi-people-fill btn-icon"></i>
                                     <span class="btn-text">Reservations</span>
                                 </a>
-
+                                <!-- View passengers for this route -->
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <a asp-controller="Routes"
@@ -121,12 +129,14 @@
                                         <i class="bi bi-pencil-fill btn-icon"></i>
                                         <span class="btn-text">Update</span>
                                     </a>
+                                    <!-- Edit route -->
 
                                     <a href="/Communicate?routeId=@route.RouteID"
                                        class="btn-midstate btn-midstatehover">
                                         <i class="bi bi-chat-dots-fill btn-icon"></i>
                                         <span class="btn-text">Message Riders</span>
                                     </a>
+                                    <!-- Send message to riders on this route -->
 
                                     <form asp-controller="Routes"
                                           asp-action="ToggleVisibility"
@@ -139,7 +149,7 @@
                                             <span class="btn-text">Toggle Visibility</span>
                                         </button>
                                     </form>
-
+                                    <!-- Toggles route visibility -->
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
                                         <form asp-action="Unarchive" method="post">
@@ -149,6 +159,7 @@
                                                 <span class="btn-text">Unarchive</span>
                                             </button>
                                         </form>
+                                        <!-- Restores archived route -->
                                     }
                                     else
                                     {
@@ -163,6 +174,7 @@
                                                 <span class="btn-text">Archive</span>
                                             </button>
                                         </form>
+                                        <!-- Archives route instead of deleting -->
                                     }
                                 }
 
@@ -176,9 +188,11 @@
         </div>
 
         <div id="pagination-controls-routes" class="pagination"></div>
+        <!-- Pagination controls injected via JS -->
 
     </div>
 </div>
 
 <script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
+<!-- Handles pagination and client-side table behavior -->

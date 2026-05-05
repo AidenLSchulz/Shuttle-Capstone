@@ -1,16 +1,18 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Feedback>
 
 @{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-
+// Loads shared dashboard navigation
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- Header section -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2>Testimonials</h2>
@@ -18,43 +20,58 @@
             </div>
         </div>
 
+        <!-- Container for feedback cards -->
         <div id="feedbackTableBody">
 
             @if (Model == null || !Model.Any())
             {
+                <!-- Displayed when no feedback exists -->
                 <div class="form-paper p-3">
                     <p>No testimonials currently exist.</p>
                 </div>
             }
             else
             {
+                // Orders feedback so newest appears first
                 @foreach (var f in Model.OrderByDescending(f => f.FeedbackId))
                 {
                     <div class="form-paper mb-4 p-4 position-relative feedback-card">
 
+                        <!-- Layout for feedback card -->
                         <div class="d-flex justify-content-between align-items-start">
 
                             <div>
+                                <!-- Customer name -->
                                 <h4 class="mb-1">@f.CustomerName</h4>
 
+                                <!-- Feedback comment -->
                                 <div class="mb-1 comment-text">
                                     <strong>Comment:</strong>
                                     @f.Comment
                                 </div>
 
+                                <!-- Metadata -->
                                 <div>
                                     <span><strong>Rating:</strong> @f.Rating</span>
                                     <span> | </span>
+
+                                    <!-- Whether testimonial is displayed publicly -->
                                     <span><strong>Share Testimonial:</strong> @(f.DisplayTestimonial ? "Yes" : "No")</span>
                                     <span> | </span>
+
+                                    <!-- Submission date -->
                                     <span><strong>Date Submitted:</strong> @f.DateSubmitted.ToString("MM-dd-yyyy")</span>
                                     <span> | </span>
+
+                                    <!-- Active/Inactive status -->
                                     <span><strong>Status:</strong> @(f.IsActive ? "Active" : "Inactive")</span>
                                 </div>
                             </div>
 
+                            <!-- Action buttons -->
                             <div class="text-end">
 
+                                <!-- Approve testimonial -->
                                 <form asp-controller="Feedback"
                                       asp-action="ApproveTestimonial"
                                       asp-route-id="@f.FeedbackId"
@@ -64,6 +81,7 @@
                                     </button>
                                 </form>
 
+                                <!-- Archive feedback -->
                                 <form asp-controller="Feedback"
                                       asp-action="ArchiveFeedback"
                                       asp-route-id="@f.FeedbackId"
@@ -86,25 +104,34 @@
 
         </div>
 
+        <!-- Pagination controls populated by JS -->
         <div id="pagination-controls-feedback" class="pagination"></div>
 
     </div>
 </div>
 
-<!-- Feedback Details Modal (unchanged) -->
+<!-- Feedback Details Modal -->
+<!-- Displays additional feedback details dynamically -->
 <div class="modal fade" id="feedbackDetailsModal" tabindex="-1" role="dialog" aria-labelledby="feedbackDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
+                <!-- Modal title -->
                 <h5 class="modal-title" id="feedbackDetailsModalLabel">Testimonial Details</h5>
+
+                <!-- Close button -->
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+
             <div class="modal-body">
+                <!-- Content is injected dynamically via JS -->
                 <div id="feedbackDetailsContent"></div>
             </div>
+
             <div class="modal-footer">
+                <!-- Close modal -->
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
@@ -112,12 +139,14 @@
 </div>
 
 <style>
+    /* Ensures long comments wrap properly */
     .comment-text {
         overflow-wrap: break-word;
         word-break: break-word;
     }
 </style>
 
+<!-- JS for pagination, modal behavior, and feedback actions -->
 <script src="~/js/tablePagination.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="/js/Dashboard/FeedbackModal.js"></script>

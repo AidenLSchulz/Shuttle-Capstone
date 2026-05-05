@@ -1,20 +1,26 @@
 ﻿@model MidStateShuttleService.ViewModels.DashboardViewModel
 
 @{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
+// Loads shared dashboard navigation
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
-
+<!-- Dashboard-specific styles -->
 <link rel="stylesheet" href="/css/DashBoardIndex.css" />
 
 <body>
+    <!-- Main dashboard container -->
     <div class="dashboard-landing tiled-background-2">
-        <!-- Key Metrics -->
+
+        <!-- Key Metrics Section -->
         <section class="dashboard-stats-container mb-2">
 
+            <!-- Weekly Requests -->
+            <!-- Navigates to full registration list -->
             <a asp-controller="Register" asp-action="ViewAll" class="text-decoration-none">
                 <div class="dashboard-stat-card bg-primary text-white shadow-sm">
                     <div class="card-body text-center">
@@ -25,6 +31,7 @@
                 </div>
             </a>
 
+            <!-- Monthly Check-ins -->
             <a asp-controller="CheckIn" asp-action="ViewAll" class="text-decoration-none">
                 <div class="dashboard-stat-card bg-success text-white shadow-sm">
                     <div class="card-body text-center">
@@ -35,6 +42,7 @@
                 </div>
             </a>
 
+            <!-- Mail Count -->
             <a asp-controller="Reports" asp-action="Reports" class="text-decoration-none">
                 <div class="dashboard-stat-card bg-warning text-white shadow-sm">
                     <div class="card-body text-center">
@@ -45,6 +53,7 @@
                 </div>
             </a>
 
+            <!-- Total Requests -->
             <a asp-controller="Register" asp-action="ViewAll" class="text-decoration-none">
                 <div class="dashboard-stat-card bg-danger text-white shadow-sm">
                     <div class="card-body text-center">
@@ -57,12 +66,13 @@
 
         </section>
 
-        <!-- NOTIFICATIOSN -->
+        <!-- Notifications Section (Admin Only) -->
         @if (User.IsInRole("Admin"))
         {
             <div class="form-container tiled-background-2">
                 <div class="form-paper">
 
+                    <!-- Section header -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <h2>Notifications</h2>
@@ -70,35 +80,42 @@
                         </div>
                     </div>
 
+                    <!-- Container for notification cards -->
                     <div id="notificationTableBody">
 
                         @if (Model.Notifications == null || !Model.Notifications.Any())
                         {
+                            <!-- Empty state -->
                             <div class="form-paper p-3">
                                 <p>There are currently no notifications.</p>
                             </div>
                         }
                         else
                         {
+                            // Filters out archived notifications and sorts newest first
                             @foreach (var notification in Model.Notifications
-                                                    .Where(n => !n.IsArchived)
-                                                    .OrderByDescending(n => n.TimeSent))
+                                                .Where(n => !n.IsArchived)
+                                                .OrderByDescending(n => n.TimeSent))
                             {
                                 <div class="form-paper mb-4 p-4 position-relative message-card">
 
+                                    <!-- Responsive layout -->
                                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
 
                                         <div class="flex-grow-1 min-width-0">
 
+                                            <!-- Notification subject -->
                                             <h4 class="mb-2">
                                                 @(string.IsNullOrEmpty(notification.Subject) ? "No Subject" : notification.Subject)
                                             </h4>
 
+                                            <!-- Notification message body -->
                                             <div class="mb-2">
                                                 <strong>Message:</strong>
                                                 <span style="display: block; overflow-wrap: break-word; word-break: break-word;">@notification.Body</span>
                                             </div>
 
+                                            <!-- Timestamp -->
                                             <div>
                                                 <span>
                                                     <strong>Sent:</strong>
@@ -108,13 +125,18 @@
 
                                         </div>
 
+                                        <!-- Action buttons -->
                                         <div class="d-flex flex-row flex-md-column gap-2 flex-shrink-0 flex-wrap">
+
+                                            <!-- View full notification -->
                                             <a asp-controller="Notification"
                                                asp-action="ViewNotificationContents"
                                                asp-route-id="@notification.Id"
                                                class="btn btn-midstate btn-sm">
                                                 <i class="bi bi-eye me-1"></i> View
                                             </a>
+
+                                            <!-- Archive (mark as read) -->
                                             <form asp-controller="Notification"
                                                   asp-action="Archive"
                                                   asp-route-id="@notification.Id"
@@ -133,15 +155,16 @@
 
                     </div>
 
+                    <!-- Pagination controls populated by JS -->
                     <div id="pagination-controls-notification" class="pagination"></div>
 
                 </div>
             </div>
         }
-        
+
     </div>
 </body>
 
-
+<!-- JS for pagination and modal handling -->
 <script src="~/js/tablePagination.js"></script>
 <script src="~/js/Dashboard/MessageModal.js"></script>

@@ -3,24 +3,24 @@
 @using MidStateShuttleService.Models
 
 @{
+    // Sets page title and layout
     ViewData["Title"] = "Reports";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 
-    // DEV NOTE:
-    // Controller sets ViewBag.ReportType
+    // Determines which report is selected (requests, checkins, or mail)
     var reportType = (ViewBag.ReportType as string) ?? "";
 
     var isRequests = reportType.Equals("requests", StringComparison.OrdinalIgnoreCase);
     var isCheckins = reportType.Equals("checkins", StringComparison.OrdinalIgnoreCase);
     var isMail = reportType.Equals("mail", StringComparison.OrdinalIgnoreCase);
 
-    // DEV NOTE:
-    // Always convert collections to lists to avoid null issues
+    // Converts collections to lists to prevent null issues
     var requestRows = (Model.Register ?? Enumerable.Empty<RegisterModel>()).ToList();
     var checkinRows = (Model.CheckIn ?? Enumerable.Empty<CheckIn>()).ToList();
     var mailRows = (Model.MailItems ?? Enumerable.Empty<MailItem>()).ToList();
 }
 
+<!-- Styles for dashboard and reports -->
 <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/Reports..css" asp-append-version="true" />
 
@@ -33,6 +33,7 @@
             <div class="reportsHint">Run admin reports and export CSV files.</div>
         </div>
 
+        <!-- Navigation back to dashboard -->
         <a class="rptBtn rptBtnGhost"
            href="@Url.Action("Index", "Dashboard")">
             ← Back to Dashboard
@@ -51,7 +52,7 @@
         <div class="reportCardBody">
             <div class="reportPickerGrid">
 
-                <!-- REQUESTS -->
+                <!-- REQUESTS OPTION -->
                 <div class="reportOption @(isRequests ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -63,6 +64,7 @@
                         </div>
                     </div>
 
+                    <!-- Run and Export actions -->
                     <div class="reportOptionActions">
                         <a class="rptBtn"
                            href="@Url.Action("Reports", "Reports", new { report = "requests" })">
@@ -76,7 +78,7 @@
                     </div>
                 </div>
 
-                <!-- CHECKINS -->
+                <!-- CHECKINS OPTION -->
                 <div class="reportOption @(isCheckins ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -101,7 +103,7 @@
                     </div>
                 </div>
 
-                <!-- MAIL -->
+                <!-- MAIL OPTION -->
                 <div class="reportOption @(isMail ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -132,16 +134,19 @@
 
     @if (isRequests)
     {
+        <!-- REQUEST RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <div class="reportStickyLeft">
                     <h3>Rider Requests</h3>
                 </div>
                 <div class="reportStickyRight">
+                    <!-- Displays total row count -->
                     <span class="pill">Rows: @requestRows.Count</span>
                 </div>
             </div>
 
+            <!-- Scrollable table -->
             <div class="reportScrollArea">
                 <table class="reportsTable">
                     <thead>
@@ -163,6 +168,7 @@
                         @foreach (var request in requestRows)
                         {
                             <tr>
+                                <!-- Displays request data -->
                                 <td>@request.RegistrationId</td>
                                 <td>@request.Name</td>
                                 <td>@request.StudentId</td>
@@ -184,6 +190,7 @@
 
     else if (isCheckins)
     {
+        <!-- CHECKIN RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <h3>Check-ins</h3>
@@ -225,8 +232,7 @@
 
     else if (isMail)
     {
-        <!-- DEV NOTE:
-             Updated to match NEW MailItem model (DriverName, no Sender/Recipient/Tracking) -->
+        <!-- MAIL RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <h3>Mail Check-Ins</h3>

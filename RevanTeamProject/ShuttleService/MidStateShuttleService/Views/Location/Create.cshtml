@@ -3,97 +3,128 @@
 *@
 @{
 }
+
+// Model represents a single location being created
 @model MidStateShuttleService.Models.Location
 
-<!-- Include Bootstrap CSS -->
+<!-- Bootstrap and custom styles -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/Location.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
 
-<!-- Include jQuery and Bootstrap JS -->
+<!-- jQuery and Bootstrap JS for modal + interactions -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <body>
     <div>
+        <!-- Wrapper for centering form -->
         <div class="wrapper wrapper--w680 mt-5">
             <div class="form form-1">
 
                 <div class="form-body">
+
+                    <!-- Page title -->
                     <h2 class="title">Create Location</h2>
+
+                    <!-- Form posts to Create action -->
                     <form asp-action="Create" method="post">
                         @Html.AntiForgeryToken()
 
+                        <!-- Displays model validation errors -->
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                         <div>
+
+                            <!-- Location name -->
                             <div class="input-fields">
                                 <input asp-for="Name" type="text" class="input--style-1" placeholder="Stop Name" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="Name" class="text-danger"></span>
                             </div>
 
+                            <!-- Address -->
                             <div class="input-fields">
                                 <input asp-for="Address" type="text" class="input--style-1" placeholder="Enter Address" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="Address" class="text-danger"></span>
                             </div>
 
+                            <!-- City -->
                             <div class="input-fields">
                                 <input asp-for="City" type="text" class="input--style-1" placeholder="City" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="City" class="text-danger"></span>
                             </div>
 
+                            <!-- State (2-character limit) -->
                             <div class="input-fields">
                                 <input asp-for="State" type="text" class="input--style-1" placeholder="State" maxlength="2" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="State" class="text-danger"></span>
                             </div>
 
+                            <!-- Zip Code -->
                             <div class="input-fields">
                                 <input asp-for="ZipCode" type="text" class="input--style-1" placeholder="Zip Code" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="ZipCode" class="text-danger"></span>
                             </div>
 
+                            <!-- Abbreviation (used in routes/schedules) -->
                             <div class="input-fields">
                                 <input asp-for="Abbreviation" type="text" class="input--style-1" placeholder="Stop Abbreviation" required />
                                 <div class="div-line"></div>
                                 <span asp-validation-for="Abbreviation" class="text-danger"></span>
                             </div>
 
+                            <!-- Form buttons -->
                             <div class="p-t-20">
                                 <div class="p-t-20">
+
+                                    <!-- Submit form -->
                                     <button class="btn btn--radius btn--submit" type="submit">Submit</button>
+
+                                    <!-- Cancel and return to dashboard -->
                                     <a asp-controller="Dashboard" asp-action="Index" class="btn btn--radius btn--cancel">Cancel</a>
+
                                 </div>
                             </div>
                         </div>
                     </form>
+
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Success Modal -->
+    <!-- Displays after successful location creation -->
     <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
+                    <!-- Modal title -->
                     <h5 class="modal-title" id="successModalLabel">Location Added</h5>
+
+                    <!-- Close button -->
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+
                 <div class="modal-body">
                     Location was added successfully!
                 </div>
+
                 <div class="modal-footer">
+                    <!-- Navigate to location list -->
                     <button type="button" class="btn btn-primary"
                             onclick="location.href='@Url.Action("ViewAll", "Location")'">
                         Return
                     </button>
+
+                    <!-- Close modal to add another -->
                     <button type="button" class="btn btn-primary" data-dismiss="modal">Add Another</button>
                 </div>
             </div>
@@ -102,13 +133,19 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            // Reads success flag from TempData
             var locationSuccess = '@TempData["LocationSuccess"]';
+
+            // Shows modal if location was successfully created
             if (locationSuccess === 'True') {
                 $('#successModal').modal('show');
             }
         });
     </script>
 
+    <!-- Validation scripts for client-side validation -->
     <partial name="_ValidationScriptsPartial" />
+
+    <!-- Custom JS for location behavior -->
     <script src="~/js/location.js"></script>
 </body>

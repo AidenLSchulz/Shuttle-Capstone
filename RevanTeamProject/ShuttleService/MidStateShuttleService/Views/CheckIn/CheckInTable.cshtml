@@ -1,14 +1,15 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.CheckIn>
 
 @{
+    // Sets page title and uses the admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-
+// Loads shared dashboard navigation
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
-<!-- If true use the inverted version to show a difference -->
+<!-- If viewing archived check-ins, switch background style -->
 @if ((bool?)ViewData["Archives"] == true)
 {
     <style>
@@ -21,51 +22,62 @@
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- Header with title and add button -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2>Check-Ins</h2>
                 <p class="mb-0">Manage shuttle check-ins.</p>
             </div>
 
+            <!-- Navigates to create a new check-in -->
             <a asp-controller="CheckIn" asp-action="CheckIn" class="btn btn-midstate">
                 <i class="bi bi-plus-circle-fill me-1"></i> Add Check-in
             </a>
         </div>
 
+        <!-- Container for check-in cards -->
         <div id="checkInsTableBody">
 
             @if (Model == null || !Model.Any())
             {
+                <!-- Displayed when there are no check-ins -->
                 <div class="form-paper p-3">
                     <p>There are currently no check-ins.</p>
                 </div>
             }
             else
             {
+                // Orders check-ins so newest appear first
                 @foreach (var c in Model.OrderByDescending(c => c.CheckInId))
                 {
                     <div class="form-paper mb-4 p-4 position-relative checkin-card">
 
+                        <!-- Responsive layout for card content -->
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
 
                             <div>
+                                <!-- Check-in name -->
                                 <h4 class="mb-1">@c.Name</h4>
 
                                 <div class="mb-1">
+                                    <!-- Converts stored date to Central Time for display -->
                                     <strong>Date:</strong> @MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(c.Date, "MM/dd/yyyy hh:mm tt")
                                 </div>
 
                                 <div class="mb-1">
+                                    <!-- Displays pickup and drop-off locations -->
                                     <span><strong>Pick-Up:</strong> @c.Location.CheckInName()</span>
                                     <span> | </span>
                                     <span><strong>Drop-Off:</strong> @c.DropOffLocation.CheckInName()</span>
                                 </div>
 
                                 <div class="mb-1">
+                                    <!-- Shows comments or fallback text -->
                                     <strong>Comments:</strong> @(string.IsNullOrEmpty(c.Comments) ? "No Comments" : c.Comments)
                                 </div>
 
                                 <div>
+                                    <!-- Displays boolean as Yes/No -->
                                     <strong>First Time?</strong> @(c.FirstTime ? "Yes" : "No")
                                 </div>
                             </div>
@@ -73,6 +85,7 @@
                             <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
                                 @if (User.IsInRole("Admin"))
                                 {
+                                    <!-- Edit check-in -->
                                     <a asp-controller="CheckIn"
                                        asp-action="EditCheckIn"
                                        asp-route-id="@c.CheckInId"
@@ -83,6 +96,7 @@
 
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
+                                        <!-- Restore archived check-in -->
                                         <form asp-action="Unarchive" method="post">
                                             <input type="hidden" name="id" value="@c.CheckInId" />
                                             <button class="btn-midstate btn-midstatehover" type="submit">
@@ -93,6 +107,7 @@
                                     }
                                     else
                                     {
+                                        <!-- Archive active check-in -->
                                         <form asp-controller="CheckIn"
                                               asp-action="ToggleCheckInActive"
                                               method="post">
@@ -118,11 +133,13 @@
 
         </div>
 
+        <!-- Pagination controls populated by JS -->
         <div id="pagination-controls-checkIns" class="pagination"></div>
 
     </div>
 </div>
 
+<!-- JS for pagination, table behavior, and searching -->
 <script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
 <script src="/js/SearchFunc/RouteSearch.js"></script>

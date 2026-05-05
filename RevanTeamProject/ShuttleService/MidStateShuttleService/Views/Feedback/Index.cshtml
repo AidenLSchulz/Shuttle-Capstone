@@ -1,31 +1,36 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Feedback>
 
 @{
+    // Sets page title for public testimonial page
     ViewBag.Title = "Shuttle Service Testimonials";
 }
 
-<!-- Include Bootstrap CSS -->
+<!-- Bootstrap and site styles -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-<link rel="stylesheet" href="/css/site.css" /><link rel="stylesheet" href="/css/Feedback.css" />
+<link rel="stylesheet" href="/css/site.css" />
+<link rel="stylesheet" href="/css/Feedback.css" />
 
-
-<!-- Include jQuery and Bootstrap JS -->
+<!-- jQuery and Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
-<!-- Slick slider plugin -->
+<!-- Slick slider styles (for carousel-style testimonials if used) -->
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css" />
-
 
 <body>
 
     <div class="container mt-5">
+
+        <!-- Page title -->
         <h2>Customer Testimonial</h2>
+
+        <!-- Feedback submission form -->
         <form id="feedbackForm" asp-action="Create" method="post">
 
             <!-- Success Modal -->
+            <!-- Displays after successful submission -->
             <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -45,20 +50,30 @@
                 </div>
             </div>
 
+            <!-- Validation summary -->
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <!-- Name input -->
             <div class="form-group">
                 <label for="name">Name</label>
                 <input type="text" class="form-control" id="name" name="CustomerName" placeholder="Your full name">
+                <!-- Optional anonymity note -->
                 <p class="name-info">* If you prefer to remain anonymous, simply leave the name field blank.</p>
             </div>
+
+            <!-- Testimonial input -->
             <div class="form-group">
                 <label for="testimonial">Your Testimonial</label>
-                <textarea class="form-control" id="testimonial" name="Comment" rows="3" placeholder="Share your experience with us..." ></textarea>
+                <textarea class="form-control" id="testimonial" name="Comment" rows="3" placeholder="Share your experience with us..."></textarea>
+                <!-- Validation message -->
                 <div id="comment-validation-message" class="validation-message">Comment is required and should not exceed 255 characters.</div>
             </div>
+
+            <!-- Star rating -->
             <div class="form-group">
                 <label for="rating">Overall Rating</label>
                 <div class="star-rating">
+                    <!-- 1–5 star selection -->
                     <input id="star1" name="rating" type="radio" value="1" class="star" />
                     <label for="star1" title="1 star"></label>
 
@@ -74,10 +89,12 @@
                     <input id="star5" name="rating" type="radio" value="5" class="star" />
                     <label for="star5" title="5 stars"></label>
 
+                    <!-- Validation -->
                     <div id="Star-validation-message" class="validation-message">Please select a rating.</div>
                 </div>
             </div>
 
+            <!-- Emoji satisfaction rating -->
             <div class="form-group">
                 <label for="emojiRating">Satisfaction Level</label>
                 <div id="emojiRating" class="emoji-rating">
@@ -86,32 +103,46 @@
                     <input id="emoji-3" type="radio" name="satisfaction" value="3"><label for="emoji-3">😐</label>
                     <input id="emoji-4" type="radio" name="satisfaction" value="4"><label for="emoji-4">😊</label>
                     <input id="emoji-5" type="radio" name="satisfaction" value="5"><label for="emoji-5">😄</label>
+
+                    <!-- Validation -->
                     <div id="satisfaction-validation-message" class="validation-message">Please select your satisfaction level.</div>
                 </div>
             </div>
+
+            <!-- Recommendation question -->
             <div class="form-group">
                 <label>Would you recommend us?</label>
+
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="recommend" id="recommendYes" value="yes" checked>
                     <label class="form-check-label" for="recommendYes">Yes</label>
                 </div>
+
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="recommend" id="recommendNo" value="no">
                     <label class="form-check-label" for="recommendNo">No</label>
                 </div>
             </div>
+
+            <!-- Submit button -->
             <button type="submit" class="btn btn--radius btn--submit">Submit</button>
         </form>
 
-        <!-- Testimonials Section -->
+        <!-- Testimonials Display Section -->
         <div class="testimonials-container" style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+
+            <!-- Section header -->
             <div class="testimonials-header">
                 <h2>Discover why our customers love our services!</h2>
             </div>
+
             @foreach (var feedback in Model)
             {
+                <!-- Individual testimonial card -->
                 <div class="testimonial">
                     <span class="open quote">“</span>
+
+                    <!-- Star display -->
                     <div class="starsRating">
                         @for (int i = 1; i <= 5; i++)
                         {
@@ -125,22 +156,30 @@
                             }
                         }
                     </div>
+
+                    <!-- Decorative image -->
                     <div class="image">
                         <div class="clip"></div>
                         <img class="shuttle-img" src="/img/shuttle icon free.png">
                     </div>
+
+                    <!-- Comment -->
                     <p>@Html.DisplayFor(modelItem => feedback.Comment)</p>
+
+                    <!-- Customer + date -->
                     <div class="source">
                         <span>@Html.DisplayFor(modelItem => feedback.CustomerName)</span>
                         <div class="date-submitted">
                             @Html.DisplayFor(modelItem => feedback.DateSubmitted, "{0:MMMM dd, yyyy}")
                         </div>
                     </div>
+
                     <span class="close quote">”</span>
                 </div>
             }
         </div>
-        <!-- Pagination Controls -->
+
+        <!-- Pagination controls -->
         <div id="pagination-controls" class="pagination">
             <button class="page-btn">1</button>
             <button class="page-btn">2</button>
@@ -151,17 +190,19 @@
 
 </body>
 
-<!-- Include success custom JS files -->
 <script type="text/javascript">
     $(document).ready(function () {
+        // Reads success flag from TempData
         var registrationSuccess = '@TempData["FeedbackSuccess"]';
+
+        // Shows modal if submission was successful
         if (registrationSuccess === 'True') {
             $('#successModal').modal('show');
         }
     });
 </script>
 
-
+<!-- Additional JS for UI behavior -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

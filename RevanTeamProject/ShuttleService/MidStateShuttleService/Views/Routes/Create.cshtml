@@ -1,26 +1,37 @@
 ﻿@using MidStateShuttleService.Enums
 @{
     ViewData["Title"] = "Create Route";
+    // Sets the page title displayed in the layout/tab
 }
 
 @inject MidStateShuttleService.Service.IListService ListServices
+// Service injection for list-related data (not actively used in this view)
+
 @model MidStateShuttleService.Models.Routes
+// Strongly typed model for binding form inputs to the Routes object
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/routes.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
+// jQuery is used for modal handling
+// Bootstrap provides styling and modal functionality
+// Custom CSS files handle route page and modal styling
 
 <body>
     <div class="wrapper wrapper--w680 mt-5">
         <div class="form form-1">
             <div class="form-body">
                 <h2 class="title">Create Route</h2>
+
                 <form asp-action="Create" method="post">
                     @Html.AntiForgeryToken()
+                    // Prevents CSRF attacks on form submission
 
                     <div asp-validation-summary="All" class="text-danger"></div>
+                    // Displays all validation errors from the model
 
+                    <!-- Day of Week -->
                     <div class="input-fields">
                         <label>Day of Week</label>
                         <select asp-for="DayOfWeek"
@@ -29,12 +40,17 @@
                                 required>
                             <option value="">--Select Day--</option>
                         </select>
+                        // Dropdown populated from WeekDay enum
+
                         <div class="div-line"></div>
+
                         <div id="DayOfWeek-validation-message" class="validation-message">
                             Please select a day of the week.
                         </div>
+                        // Custom validation message (likely used with JS)
                     </div>
 
+                    <!-- Pick Up Location -->
                     <div class="input-fields">
                         <label>Pick Up Location</label>
                         <select asp-for="PickUpLocationID"
@@ -43,10 +59,14 @@
                                 required>
                             <option value="">--Select--</option>
                         </select>
+                        // Locations come from controller via ViewBag
+
                         <div class="div-line"></div>
                         <span asp-validation-for="PickUpLocationID" class="text-danger"></span>
+                        // Field-specific validation error display
                     </div>
 
+                    <!-- Drop Off Location -->
                     <div class="input-fields">
                         <label>Drop Off Location</label>
                         <select asp-for="DropOffLocationID"
@@ -55,36 +75,51 @@
                                 required>
                             <option value="">--Select--</option>
                         </select>
+                        // Uses same location list as pickup
+
                         <div class="div-line"></div>
                         <span asp-validation-for="DropOffLocationID" class="text-danger"></span>
                     </div>
 
+                    <!-- Pick Up Time -->
                     <div class="input-fields">
                         <label>Pick Up Time</label>
                         <input asp-for="PickUpTime" type="time" class="form-control input--style-1" required />
+                        // Time input bound to PickUpTime (TimeSpan/TimeOnly)
+
                         <div class="div-line"></div>
                         <span asp-validation-for="PickUpTime" class="text-danger"></span>
                     </div>
 
+                    <!-- Drop Off Time -->
                     <div class="input-fields">
                         <label>Drop Off Time</label>
                         <input asp-for="DropOffTime" type="time" class="form-control input--style-1" required />
+                        // Time input bound to DropOffTime
+
                         <div class="div-line"></div>
                         <span asp-validation-for="DropOffTime" class="text-danger"></span>
                     </div>
 
+                    <!-- Additional Details -->
                     <div class="input-fields">
                         <label>Additional Details</label>
                         <textarea asp-for="AdditionalDetails"
                                   class="form-control input--style-1"
                                   placeholder="Enter additional details"></textarea>
+                        // Optional free-text field for extra route info
+
                         <div class="div-line"></div>
                         <span asp-validation-for="AdditionalDetails" class="text-danger"></span>
                     </div>
 
+                    <!-- Buttons -->
                     <div class="p-t-20">
                         <button type="submit" class="btn btn--radius btn--submit">Create Route</button>
+                        // Submits form to RoutesController Create action
+
                         <button class="btn btn--radius btn--cancel" type="button" onclick="location.href='../Dashboard'">Cancel</button>
+                        // Redirects back to dashboard without saving
                     </div>
                 </form>
             </div>
@@ -92,24 +127,30 @@
     </div>
 
     <!-- Success Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+        // Bootstrap modal shown after successful route creation
+
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="successModalLabel">Route Added</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title">Route Added</h5>
                 </div>
+
                 <div class="modal-body">
                     Route was added successfully!
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary"
                             onclick="location.href='@Url.Action("ViewAll", "Routes")'">
                         Return
                     </button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Add Another</button>
+                    // Redirects to route list page
+
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">
+                        Add Another
+                    </button>
+                    // Closes modal to allow another entry
                 </div>
             </div>
         </div>
@@ -122,7 +163,10 @@
                 $('#successModal').modal('show');
             }
         });
+        // Checks TempData flag from controller
+        // If true, shows success modal after form submission
     </script>
 
     <script src="~/js/Routes.js"></script>
+    // External JS file for any additional route-related behavior
 </body>
