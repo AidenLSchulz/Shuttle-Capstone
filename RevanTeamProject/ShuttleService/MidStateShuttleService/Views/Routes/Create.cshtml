@@ -5,15 +5,11 @@
 }
 
 @model MidStateShuttleService.Models.Routes
-// Strongly typed model for binding form inputs to the Routes object
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/routes.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
-// jQuery is used for modal handling
-// Bootstrap provides styling and modal functionality
-// Custom CSS files handle route page and modal styling
 
 <body>
     <div class="wrapper wrapper--w680 mt-5">
@@ -24,11 +20,9 @@
                 <!-- Route creation form — posts to RoutesController.Create -->
                 <form asp-action="Create" method="post">
                     @Html.AntiForgeryToken()
-                    // Prevents CSRF attacks on form submission
 
                     <!-- Server-side validation summary — displays all model errors on failed submission -->
                     <div asp-validation-summary="All" class="text-danger"></div>
-                    // Displays all validation errors from the model
 
                     <!-- Day of Week — populated from the WeekDay enum -->
                     <div class="input-fields">
@@ -39,14 +33,12 @@
                                 required>
                             <option value="">--Select Day--</option>
                         </select>
-                        // Dropdown populated from WeekDay enum
 
                         <div class="div-line"></div>
 
                         <div id="DayOfWeek-validation-message" class="validation-message">
                             Please select a day of the week.
                         </div>
-                        // Custom validation message (likely used with JS)
                     </div>
 
                     <!-- Pick Up Location — populated from ViewBag.Locations by LoadRouteDropdowns() -->
@@ -58,11 +50,9 @@
                                 required>
                             <option value="">--Select--</option>
                         </select>
-                        // Locations come from controller via ViewBag
 
                         <div class="div-line"></div>
                         <span asp-validation-for="PickUpLocationID" class="text-danger"></span>
-                        // Field-specific validation error display
                     </div>
 
                     <!-- Drop Off Location — populated from the same ViewBag.Locations list -->
@@ -74,7 +64,6 @@
                                 required>
                             <option value="">--Select--</option>
                         </select>
-                        // Uses same location list as pickup
 
                         <div class="div-line"></div>
                         <span asp-validation-for="DropOffLocationID" class="text-danger"></span>
@@ -84,7 +73,6 @@
                     <div class="input-fields">
                         <label>Pick Up Time</label>
                         <input asp-for="PickUpTime" type="time" class="form-control input--style-1" required />
-                        // Time input bound to PickUpTime (TimeSpan/TimeOnly)
 
                         <div class="div-line"></div>
                         <span asp-validation-for="PickUpTime" class="text-danger"></span>
@@ -94,7 +82,6 @@
                     <div class="input-fields">
                         <label>Drop Off Time</label>
                         <input asp-for="DropOffTime" type="time" class="form-control input--style-1" required />
-                        // Time input bound to DropOffTime
 
                         <div class="div-line"></div>
                         <span asp-validation-for="DropOffTime" class="text-danger"></span>
@@ -106,7 +93,6 @@
                         <textarea asp-for="AdditionalDetails"
                                   class="form-control input--style-1"
                                   placeholder="Enter additional details"></textarea>
-                        // Optional free-text field for extra route info
 
                         <div class="div-line"></div>
                         <span asp-validation-for="AdditionalDetails" class="text-danger"></span>
@@ -115,10 +101,8 @@
                     <!-- Form actions — Cancel redirects to the Dashboard without saving -->
                     <div class="p-t-20">
                         <button type="submit" class="btn btn--radius btn--submit">Create Route</button>
-                        // Submits form to RoutesController Create action
 
                         <button class="btn btn--radius btn--cancel" type="button" onclick="location.href='../Dashboard'">Cancel</button>
-                        // Redirects back to dashboard without saving
                     </div>
                 </form>
             </div>
@@ -168,5 +152,4 @@
     </script>
 
     <script src="~/js/Routes.js"></script>
-    // External JS file for any additional route-related behavior
 </body>

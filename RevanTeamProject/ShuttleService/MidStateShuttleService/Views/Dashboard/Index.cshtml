@@ -1,12 +1,10 @@
 ﻿@model MidStateShuttleService.ViewModels.DashboardViewModel
 
 @{
-    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-// Loads shared dashboard navigation
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
 <!-- Dashboard-specific styles -->
