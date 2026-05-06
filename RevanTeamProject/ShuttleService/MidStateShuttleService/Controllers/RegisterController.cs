@@ -1010,6 +1010,15 @@ namespace MidStateShuttleService.Controllers
                     </td>
                 </tr>
                 <tr>
+                    <td style='padding: 6px 0; color: #888;'>Field Trip</td>
+                    <td style='padding: 6px 0;'>{(registration.IsFieldTrip ? "Yes" : "No")}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Internal Inquiry</td>
+                    <td style='padding: 6px 0;'>{(registration.IsInternalInquiry ? "Yes" : "No")}</td>
+                </tr>
+
+                <tr>
                     <td style='padding: 6px 0; color: #888;'>Request Type</td>
                     <td style='padding: 6px 0;'>
                         <span style='background-color: {(registration.isCustom == true ? "#fff3e0" : "#e6f4ea")}; color: {(registration.isCustom == true ? "#e65100" : "#2e7d32")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>

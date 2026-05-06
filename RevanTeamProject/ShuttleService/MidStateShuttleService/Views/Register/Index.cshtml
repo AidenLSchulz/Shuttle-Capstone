@@ -86,7 +86,8 @@
                         <li>You are a Mid-State employee.</li>
                         <li>This request is for a field trip.</li>
                         <li>You need transportation to or from the dorms.</li>
-                        <li>You selected "Other" for request duration (please include the date(s) of your request).</li>
+                        <li>You selected "Other" for length of request (please include the date(s) of your request).</li>
+                        <li>Please let us know any other information.</li>
                     </ul>
                 </section>
 
@@ -156,6 +157,26 @@
                             <input asp-for="IsAdult" type="checkbox" id="IsAdult" name="IsAdult" value="true" />
                             <label for="IsAdult">
                                 Are you 18 or older?
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Field trip -->
+                    <div class="form-group terms-group">
+                        <div class="checkbox-midstate">
+                        <input asp-for="IsFieldTrip" type="checkbox" id="IsFieldTrip" name="IsFieldTrip" value="true" />
+                        <label for="IsFieldTrip">
+                            Is this for a field trip?
+                        </label>
+                        </div>
+                    </div>
+
+                    <!-- Internal Inquiry -->
+                    <div class="form-group terms-group">
+                        <div class="checkbox-midstate">
+                        <input asp-for="IsInternalInquiry" type="checkbox" id="IsInternalInquiry" name="IsInternalInquiry" value="true" />
+                        <label for="IsInternalInquiry">
+                                Is this for an internal inquiry?
                             </label>
                         </div>
                     </div>
