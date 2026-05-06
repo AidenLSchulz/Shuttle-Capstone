@@ -32,6 +32,29 @@
 
 <div class="form-container tiled-background-2">
     <div class="form-paper">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        }
 
         <!-- Page header — Add Route button is shown only to Admin users -->
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -46,7 +69,68 @@
                     Add Route
                 </a>
                 <!-- Admin-only button to create a new route -->
+                <div class="d-flex gap-2">
+                    <!-- Add Route -->
+                    <a asp-controller="Routes" asp-action="Create" class="btn btn-midstate">
+                        Add Route
+                    </a>
+
+                    <!-- Upload Routes -->
+                    <form asp-controller="Routes"
+                          asp-action="UploadRoutesExcel"
+                          method="post"
+                          enctype="multipart/form-data"
+                          style="display:inline;">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="file"
+                               name="excelFile"
+                               id="excelFileInput"
+                               accept=".xlsx"
+                               style="display:none;"
+                               onchange="this.form.submit();" />
+
+                        <button type="button"
+                                class="btn btn-midstate"
+                                title="Upload .xlsx file with DEP, START, END, ARRIVAL, MON–THUR columns"
+                                onclick="document.getElementById('excelFileInput').click();">
+                            Upload Routes
+                        </button>
+                    </form>
+                </div>
             }
+        </div>
+
+        <!-- Route Filter -->
+        <div class="form-paper mb-3 p-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="mb-1"><strong>Pickup Location</strong></label>
+                    <select id="routePickupFilter" class="form-control">
+                        <option value="">All Pickup Locations</option>
+
+                        @foreach (var loc in routes.Select(r => r.PickUpLocation).DistinctBy(l => l.LocationId))
+                        {
+                            <option value="@loc.LocationId">@loc.ToStringPickup()</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="mb-1"><strong>Pickup Time Range</strong></label>
+
+                    <div class="d-flex gap-2">
+                        <input id="routeTimeFrom"
+                               type="time"
+                               class="form-control" />
+
+                        <input id="routeTimeTo"
+                               type="time"
+                               class="form-control" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="routesTableBody">
@@ -67,6 +151,7 @@
                     <!-- route-disabled class is applied when Enabled=false to visually dim hidden routes -->
                     <div class="form-paper mb-4 p-4 position-relative route-card @(!route.Enabled ? "route-disabled" : "")"
                          data-pickup="@route.PickUpLocationID"
+                         data-time="@route.PickUpTime?.ToString(@"hh\:mm")"
                          data-dropoff="@route.DropOffLocationID"
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
@@ -203,6 +288,11 @@
     </div>
 </div>
 
-<script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
 <!-- Handles pagination and client-side table behavior -->
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(a => a.remove());
+    }, 8000);
+</script>
+<script src="~/js/RoutesManagement.js"></script>
