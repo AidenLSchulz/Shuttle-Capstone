@@ -16,7 +16,7 @@
 
     // DEV NOTE:
     // Always convert collections to lists to avoid null issues
-    var requestRows = ((IEnumerable<RequestDay>?)ViewBag.RequestRoutes ?? Enumerable.Empty<RequestDay>()).ToList();
+    var requestRows = ((IEnumerable<RegisterModel>?)ViewBag.RequestRoutes ?? Enumerable.Empty<RegisterModel>()).ToList();
     var checkinRows = (Model.CheckIn ?? Enumerable.Empty<CheckIn>()).ToList();
     var mailRows = (Model.MailItems ?? Enumerable.Empty<MailItem>()).ToList();
 }
@@ -169,37 +169,94 @@
                             <th>Dropoff Time</th>
                             <th>Date</th>
                             <th>Archived</th>
+                            <th>Additional Details</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var requestDay in requestRows)
+                        @foreach (var registration in requestRows)
                         {
-                            foreach (var ride in requestDay.Rides)
+                            var requestDays = registration.DaySchedules ?? new List<RequestDay>();
+
+                            if (requestDays.Any())
+                            {
+                                foreach (var requestDay in requestDays)
+                                {
+                                    var rides = requestDay.Rides ?? new List<Ride>();
+
+                                    if (rides.Any())
+                                    {
+                                        foreach (var ride in rides)
+                                        {
+                                            <tr>
+                                                <td>@registration.RegistrationId</td>
+                                                <td>@ride.RideId</td>
+                                                <td>@ride.RouteId</td>
+                                                <td>@registration.Name</td>
+                                                <td>@registration.StudentId</td>
+                                                <td>@registration.Email</td>
+                                                <td>@registration.Phone</td>
+                                                <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                                <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                                <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                                <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                                <td>@requestDay.WeekDay</td>
+                                                <td>@ride.PickUpLocation?.Name</td>
+                                                <td>@ride.DropOffLocation?.Name</td>
+                                                <td>@ride.DropOffTime?.ToString("h\\:mm")</td>
+                                                <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                                <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                                <td>@registration.customMessage</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>@registration.RegistrationId</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td>@registration.Name</td>
+                                            <td>@registration.StudentId</td>
+                                            <td>@registration.Email</td>
+                                            <td>@registration.Phone</td>
+                                            <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                            <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                            <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                            <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                            <td>@requestDay.WeekDay</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                            <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                            <td>@registration.customMessage</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@requestDay.Registration?.RegistrationId</td>
-                                    <td>@ride.RideId</td>
-                                    <td>@ride.RouteId</td>
-                                    <td>@requestDay.Registration?.Name</td>
-                                    <td>@requestDay.Registration?.StudentId</td>
-                                    <td>@requestDay.Registration?.Email</td>
-                                    <td>@requestDay.Registration?.Phone</td>
-                                    <td>@(requestDay.Registration?.IsAdult == true ? "Yes" : "No")</td>
-                                    <td>@(requestDay.Registration?.isCustom == true ? "Special" : "Regular")</td>
-                                    <td>@(requestDay.Registration?.IsFieldTrip == true ? "Yes" : "No")</td>
-                                    <td>@(requestDay.Registration?.IsInternalInquiry == true ? "Yes" : "No")</td>
-                                    <td>@requestDay.WeekDay</td>
-                                    <td>@ride.PickUpLocation?.Name</td>
-                                    <td>@ride.DropOffLocation?.Name</td>
-                                    <td>@ride.DropOffTime?.ToString("h\\:mm")</td>
-                                    <td>
-                                        @(requestDay.Registration == null
-                                                                    ? ""
-                                                                    : MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(requestDay.Registration.InsertDateTime))
-                        </td>
-                        <td>@(requestDay.Registration?.IsArchived == true ? "Yes" : "No")</td>
-                    </tr>
-                                        }
+                                    <td>@registration.RegistrationId</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>@registration.Name</td>
+                                    <td>@registration.StudentId</td>
+                                    <td>@registration.Email</td>
+                                    <td>@registration.Phone</td>
+                                    <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                    <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                    <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                    <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                    <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                    <td>@registration.customMessage</td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </table>

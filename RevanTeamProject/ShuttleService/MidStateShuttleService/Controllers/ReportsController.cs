@@ -43,14 +43,15 @@ namespace MidStateShuttleService.Controllers
 
                 // DEV NOTE:
                 // Load rider request records newest first for the Requests report.
-                var requestRoutes = await _context.RequestDays
+                var requestRoutes = await _context.RegisterModels
                     .AsNoTracking()
-                    .Include(rd => rd.Registration)
-                    .Include(rd => rd.Rides)
-                        .ThenInclude(r => r.PickUpLocation)
-                    .Include(rd => rd.Rides)
-                        .ThenInclude(r => r.DropOffLocation)
-                    .OrderByDescending(rd => rd.Registration!.InsertDateTime)
+                    .Include(registration => registration.DaySchedules)
+                        .ThenInclude(requestDay => requestDay.Rides)
+                            .ThenInclude(ride => ride.PickUpLocation)
+                    .Include(registration => registration.DaySchedules)
+                        .ThenInclude(requestDay => requestDay.Rides)
+                            .ThenInclude(ride => ride.DropOffLocation)
+                    .OrderByDescending(registration => registration.InsertDateTime)
                     .ToListAsync();
 
                 ViewBag.RequestRoutes = requestRoutes;
@@ -123,67 +124,107 @@ namespace MidStateShuttleService.Controllers
         {
             _logger.LogInformation("ExportRiderRequestsCsv called.");
 
-            // DEV NOTE:
-            // Pull one row per ride/route instead of one row per request.
-            // RequestDay connects the request to its rides.
-            var riderRequestRoutes = await _context.RequestDays
+            var registrations = await _context.RegisterModels
                 .AsNoTracking()
-                .Include(requestDay => requestDay.Registration)
-                .Include(requestDay => requestDay.Rides)
-                    .ThenInclude(ride => ride.PickUpLocation)
-                .Include(requestDay => requestDay.Rides)
-                    .ThenInclude(ride => ride.DropOffLocation)
-                .OrderByDescending(requestDay => requestDay.Registration!.InsertDateTime)
-                .SelectMany(requestDay => requestDay.Rides.Select(ride => new
-                {
-                    requestDay.Registration!.RegistrationId,
-                    requestDay.Registration.Name,
-                    requestDay.Registration.StudentId,
-                    requestDay.Registration.Email,
-                    requestDay.Registration.Phone,
-                    requestDay.Registration.IsAdult,
-                    requestDay.Registration.isCustom,
-                    requestDay.Registration.IsFieldTrip,
-                    requestDay.Registration.IsInternalInquiry,
-                    requestDay.Registration.InsertDateTime,
-                    requestDay.Registration.IsArchived,
-
-                    RideId = ride.RideId,
-                    RouteId = ride.RouteId,
-                    DayOfWeek = requestDay.WeekDay.ToString(),
-                    PickUpLocation = ride.PickUpLocation != null ? ride.PickUpLocation.Name : "",
-                    DropOffLocation = ride.DropOffLocation != null ? ride.DropOffLocation.Name : "",
-                    DropOffTime = ride.DropOffTime
-                }))
+                .Include(registration => registration.DaySchedules)
+                    .ThenInclude(requestDay => requestDay.Rides)
+                        .ThenInclude(ride => ride.PickUpLocation)
+                .Include(registration => registration.DaySchedules)
+                    .ThenInclude(requestDay => requestDay.Rides)
+                        .ThenInclude(ride => ride.DropOffLocation)
+                .OrderByDescending(registration => registration.InsertDateTime)
                 .ToListAsync();
 
-            _logger.LogInformation("Loaded {Count} rider request route records for CSV export.", riderRequestRoutes.Count);
+            _logger.LogInformation("Loaded {Count} rider request records for CSV export.", registrations.Count);
 
             var stringBuilder = new System.Text.StringBuilder();
 
-            stringBuilder.AppendLine("RegistrationId,RideId,RouteId,Name,StudentId,Email,Phone,IsAdult,RequestType,IsFieldTrip,IsInternalInquiry,DayOfWeek,PickUpLocation,DropOffLocation,DropOffTime,InsertDateTime,IsArchived");
+            stringBuilder.AppendLine("RegistrationId,RideId,RouteId,Name,StudentId,Email,Phone,IsAdult,RequestType,IsFieldTrip,IsInternalInquiry,DayOfWeek,PickUpLocation,DropOffLocation,DropOffTime,InsertDateTime,IsArchived,AdditionalDetails");
 
-            foreach (var riderRequestRoute in riderRequestRoutes)
+            foreach (var registration in registrations)
             {
-                stringBuilder.AppendLine(
-                    $"{riderRequestRoute.RegistrationId}," +
-                    $"{riderRequestRoute.RideId}," +
-                    $"{riderRequestRoute.RouteId}," +
-                    $"{Csv(riderRequestRoute.Name)}," +
-                    $"{CsvExcelText(riderRequestRoute.StudentId)}," +
-                    $"{CsvExcelText(riderRequestRoute.Email)}," +
-                    $"{CsvExcelText(riderRequestRoute.Phone)}," +
-                    $"{BoolToYesNo(riderRequestRoute.IsAdult)}," +
-                    $"{Csv(riderRequestRoute.isCustom ? "Special" : "Regular")}," +
-                    $"{BoolToYesNo(riderRequestRoute.IsFieldTrip)}," +
-                    $"{BoolToYesNo(riderRequestRoute.IsInternalInquiry)}," +
-                    $"{Csv(riderRequestRoute.DayOfWeek)}," +
-                    $"{Csv(riderRequestRoute.PickUpLocation)}," +
-                    $"{Csv(riderRequestRoute.DropOffLocation)}," +
-                    $"{Csv(riderRequestRoute.DropOffTime?.ToString("h\\:mm"))}," +
-                    $"{DateTimeHelper.ToCentralTimeString(riderRequestRoute.InsertDateTime)}," +
-                    $"{BoolToYesNo(riderRequestRoute.IsArchived)}"
-                );
+                var requestDays = registration.DaySchedules ?? new List<RequestDay>();
+
+                if (requestDays.Any())
+                {
+                    foreach (var requestDay in requestDays)
+                    {
+                        var rides = requestDay.Rides ?? new List<Ride>();
+
+                        if (rides.Any())
+                        {
+                            foreach (var ride in rides)
+                            {
+                                stringBuilder.AppendLine(
+                                    $"{registration.RegistrationId}," +
+                                    $"{ride.RideId}," +
+                                    $"{ride.RouteId}," +
+                                    $"{Csv(registration.Name)}," +
+                                    $"{CsvExcelText(registration.StudentId)}," +
+                                    $"{CsvExcelText(registration.Email)}," +
+                                    $"{CsvExcelText(registration.Phone)}," +
+                                    $"{BoolToYesNo(registration.IsAdult)}," +
+                                    $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                                    $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                                    $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                                    $"{Csv(requestDay.WeekDay.ToString())}," +
+                                    $"{Csv(ride.PickUpLocation?.Name)}," +
+                                    $"{Csv(ride.DropOffLocation?.Name)}," +
+                                    $"{Csv(ride.DropOffTime?.ToString("h\\:mm"))}," +
+                                    $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                                    $"{BoolToYesNo(registration.IsArchived)}," +
+                                    $"{Csv(registration.customMessage)}"
+                                );
+                            }
+                        }
+                        else
+                        {
+                            stringBuilder.AppendLine(
+                                $"{registration.RegistrationId}," +
+                                $"," +
+                                $"," +
+                                $"{Csv(registration.Name)}," +
+                                $"{CsvExcelText(registration.StudentId)}," +
+                                $"{CsvExcelText(registration.Email)}," +
+                                $"{CsvExcelText(registration.Phone)}," +
+                                $"{BoolToYesNo(registration.IsAdult)}," +
+                                $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                                $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                                $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                                $"{Csv(requestDay.WeekDay.ToString())}," +
+                                $"," +
+                                $"," +
+                                $"," +
+                                $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                                $"{BoolToYesNo(registration.IsArchived)}," +
+                                $"{Csv(registration.customMessage)}"
+                            );
+                        }
+                    }
+                }
+                else
+                {
+                    stringBuilder.AppendLine(
+                        $"{registration.RegistrationId}," +
+                        $"," +
+                        $"," +
+                        $"{Csv(registration.Name)}," +
+                        $"{CsvExcelText(registration.StudentId)}," +
+                        $"{CsvExcelText(registration.Email)}," +
+                        $"{CsvExcelText(registration.Phone)}," +
+                        $"{BoolToYesNo(registration.IsAdult)}," +
+                        $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                        $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                        $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                        $"," +
+                        $"," +
+                        $"," +
+                        $"," +
+                        $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                        $"{BoolToYesNo(registration.IsArchived)}," +
+                        $"{Csv(registration.customMessage)}"
+                    );
+                }
             }
 
             _logger.LogInformation("Rider requests CSV built successfully.");
