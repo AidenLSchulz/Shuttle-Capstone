@@ -5,34 +5,38 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-
+<!-- ===================== STYLES ===================== -->
 <link rel="stylesheet" href="~/css/RegistrationManagement.css" />
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
 <link rel="stylesheet" href="/css/SpecialRequestStarIcon.css" />
 
-<!-- If true use the inverted version to show a difference -->
+<!-- If the archive filter is active, apply the alternate tiled background to visually distinguish the archived view -->
 @if ((bool?)ViewData["Archives"] == true)
 {
     <style>
-        .tiled-background-2{
+        .tiled-background-2 {
             background-image: url('/img/tiled_background_variant_3.png');
         }
     </style>
 }
-
+<!-- ===================== END STYLES ===================== -->
+<!-- ===================== PAGE WRAPPER ===================== -->
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- PAGE HEADER -->
         <section class="form-section">
             <h2>All Shuttle Requests</h2>
             <p>Below is a list of all submitted ride requests.</p>
         </section>
-
-        <!-- Search / Filter / Sort -->
+        <!-- END PAGE HEADER -->
+        <!-- ===================== SEARCH / FILTER / SORT BAR ===================== -->
         <div class="form-paper mb-3 p-3">
             <div class="row g-2 align-items-end">
+
+                <!-- Search by name, student ID, or term -->
                 <div class="col-md-6">
                     <label class="mb-1"><strong>Search</strong></label>
                     <input id="regSearch"
@@ -41,6 +45,7 @@
                            placeholder="Search by name, student ID, or term..." />
                 </div>
 
+                <!-- Filter by request type (all / special / standard) -->
                 <div class="col-md-3">
                     <label class="mb-1"><strong>Filter</strong></label>
                     <select id="regFilter" class="form-control">
@@ -50,6 +55,7 @@
                     </select>
                 </div>
 
+                <!-- Sort by date or ride count -->
                 <div class="col-md-3">
                     <label class="mb-1"><strong>Sort</strong></label>
                     <select id="regSort" class="form-control">
@@ -59,13 +65,17 @@
                         <option value="ridesAsc">Least Rides</option>
                     </select>
                 </div>
+
             </div>
 
+            <!-- Live result count updated by RegistrationManagement.js -->
             <small class="text-muted d-block mt-2" id="regCount"></small>
         </div>
-
+        <!-- ===================== END SEARCH / FILTER / SORT BAR ===================== -->
+        <!-- ===================== REGISTRATION CARDS ===================== -->
         <div id="registrationTableBody">
 
+            <!-- Empty state — shown when no registrations exist or match the current filter -->
             @if (Model == null || !Model.Any())
             {
                 <div class="form-paper p-3">
@@ -76,6 +86,7 @@
             {
                 @foreach (var registration in Model)
                 {
+                    <!-- Pre-compute display values for this card -->
                     var dayCount = registration.DaySchedules?.Count ?? 0;
 
                     var rideCount = registration.DaySchedules?
@@ -83,13 +94,13 @@
                     .SelectMany(d => d.Rides)
                     .Count() ?? 0;
 
-                    //used for the icon
+                    <!-- Flags used to conditionally render star/badge icons on the card -->
                     var isSummer = registration.Term == SchoolTerm.Summer;
                     var isWinter = registration.Term == SchoolTerm.Winterim;
                     var isCustom = registration.isCustom == true;
                     var isOtherDuration = registration.LengthOfRequest == LengthOfRequest.Other;
-                    
 
+                    <!-- Registration card — data-* attributes are consumed by RegistrationManagement.js for client-side search/filter/sort -->
                     <div class="form-paper mb-4 p-4 position-relative reg-card registration-card @(registration.isCustom == true ? "custom-card" : "")"
                          data-name="@registration.Name"
                          data-studentid="@registration.StudentId"
@@ -98,26 +109,30 @@
                          data-created="@(registration.InsertDateTime.HasValue? registration.InsertDateTime.Value.ToString("o") : "")"
                          data-rides="@rideCount">
 
-                         <!-- STAR ICONS -->
+                        <!-- BADGE ICONS — shown for special, summer, winterim, or other-duration requests -->
                         @if (isCustom || isSummer || isWinter)
                         {
                             <div class="custom-star">
 
+                                <!-- Special request star -->
                                 @if (isCustom)
                                 {
                                     <i class="bi bi-star-fill custom-icon"></i>
                                 }
 
+                                <!-- Summer term sun -->
                                 @if (isSummer)
                                 {
                                     <i class="bi bi-sun-fill summer-icon"></i>
                                 }
 
+                                <!-- Winterim snowflake -->
                                 @if (isWinter)
                                 {
                                     <i class="bi bi-snow winter-icon"></i>
                                 }
 
+                                <!-- Other duration clock -->
                                 @if (isOtherDuration)
                                 {
                                     <i class="bi bi bi-clock clock-icon"></i>
@@ -125,31 +140,30 @@
 
                             </div>
                         }
+                        <!-- END BADGE ICONS -->
 
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+
+                            <!-- Registration summary info -->
                             <div>
                                 <h4 class="mb-1">@registration.Name</h4>
-
                                 <small>
                                     <strong>Student ID:</strong> @registration.StudentId
                                     <span> | </span>
-
                                     <strong>Term:</strong> @registration.Term
                                     <span> | </span>
-
-                                    <strong>Days:</strong>
-                                    @dayCount
+                                    <strong>Days:</strong> @dayCount
                                     <span> | </span>
-
-                                    <strong>Total Rides:</strong>
-                                    @rideCount
+                                    <strong>Total Rides:</strong> @rideCount
                                     <span> | </span>
-                                    
                                     <strong>Created:</strong> @MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime, "MM/dd/yyyy")
                                 </small>
                             </div>
-
+                            <!-- END REGISTRATION SUMMARY -->
+                            <!-- ACTION BUTTONS — View Details and Archive/Unarchive -->
                             <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
+
+                                <!-- View Details button — navigates to the full registration detail page -->
                                 <a asp-controller="Register"
                                    asp-action="Details"
                                    asp-route-registrationId="@registration.RegistrationId"
@@ -158,8 +172,10 @@
                                     <i class="bi bi-arrow-right btn-icon"></i>
                                 </a>
 
+                                <!-- Archive / Unarchive — only visible to Admin users -->
                                 @if (User.IsInRole("Admin"))
                                 {
+                                    <!-- Currently viewing archived list — show Unarchive option -->
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
                                         <form asp-action="Unarchive" method="post">
@@ -172,6 +188,7 @@
                                     }
                                     else
                                     {
+                                        <!-- Currently viewing active list — show Archive option -->
                                         <form asp-action="ArchiveRegistration" method="post">
                                             <input type="hidden" name="id" value="@registration.RegistrationId" />
                                             <button type="submit" class="btn-midstate btn-midstatehover btn-danger-midstate">
@@ -181,15 +198,19 @@
                                         </form>
                                     }
                                 }
-                                
-                            </div>
-                        </div>
 
+                            </div>
+                            <!-- END ACTION BUTTONS -->
+
+                        </div>
                     </div>
+                    <!-- END REGISTRATION CARD -->
                 }
             }
-        </div>
 
+        </div>
+        <!-- ===================== END REGISTRATION CARDS ===================== -->
+        <!-- Pagination controls — rendered and managed by RegistrationManagement.js -->
         <div id="pagination-controls-registration" class="pagination"></div>
 
     </div>
