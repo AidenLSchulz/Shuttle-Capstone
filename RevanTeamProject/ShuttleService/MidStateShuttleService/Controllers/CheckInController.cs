@@ -179,20 +179,28 @@ namespace MidStateShuttleService.Controllers
             return RedirectToAction(nameof(CheckIn));
         }
 
+        /// <summary>
+        /// Displays the edit form for an existing check-in. Restricted to Admin role only.
+        /// </summary>
+        /// <param name="id">The ID of the check-in to edit.</param>
+        /// <returns>The edit view populated with the check-in's current data, or a failure result if not found.</returns>
         [Authorize(Roles = "Admin")] // DEV NOTE: Only administrators can edit existing check-ins.
         [HttpGet]
         public IActionResult EditCheckIn(int id)
         {
             _logger.LogInformation("EditCheckIn GET requested for CheckInId: {CheckInId}", id);
 
+            // Attempt to retrieve the existing check-in by its ID.
             CheckIn existingCheckIn = _checkInService.GetEntityById(id);
 
+            // Return a failure response if no matching check-in record was found.
             if (existingCheckIn == null)
             {
                 _logger.LogWarning("EditCheckIn GET failed. Check-in not found for CheckInId: {CheckInId}", id);
                 return FailedCheckIn("Check-in not found.");
             }
 
+            // Map the retrieved check-in entity to a view model to pass to the view.
             var viewModel = new CheckInViewModel
             {
                 CheckInId = existingCheckIn.CheckInId,
@@ -204,12 +212,19 @@ namespace MidStateShuttleService.Controllers
                 IsActive = existingCheckIn.IsActive,
                 StudentId = existingCheckIn.StudentId,
                 DropOffLocationId = existingCheckIn.DropOffLocationId,
-                LocationOptions = GetLocationOptions()
+                LocationOptions = GetLocationOptions()    // Populate dropdown options for location selection.
             };
 
             return View(viewModel);
         }
 
+        /// <summary>
+        /// Handles the form submission for editing an existing check-in. Restricted to Admin role only.
+        /// </summary>
+        /// <param name="submittedModel">The view model containing the updated check-in data from the form.</param>
+        /// <returns>
+        /// Redirects to the ViewAll action on success, or returns the edit view with error details on failure.
+        /// </returns>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -217,56 +232,79 @@ namespace MidStateShuttleService.Controllers
         {
             _logger.LogInformation("EditCheckIn POST received for CheckInId: {CheckInId}", submittedModel.CheckInId);
 
+            // Validate the submitted form data against model annotations before processing.
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("EditCheckIn POST failed validation for CheckInId: {CheckInId}", submittedModel.CheckInId);
+
+                // E003CI: Model validation failure — re-populate dropdowns and return the form with an error message.
                 TempData["Error"] = "Please fill out all required fields.";
                 TempData["Code"] = "E003CI";
-                submittedModel.LocationOptions = GetLocationOptions();
+                submittedModel.LocationOptions = GetLocationOptions(); // Must be re-populated since options are not persisted across POST.
                 return View(submittedModel);
             }
 
+            // Retrieve the original check-in record to apply updates against.
             CheckIn existingCheckIn = _checkInService.GetEntityById(submittedModel.CheckInId);
 
+            // Return a failure response if the check-in no longer exists (e.g. deleted between GET and POST).
             if (existingCheckIn == null)
             {
                 _logger.LogWarning("EditCheckIn POST failed. Check-in not found for CheckInId: {CheckInId}", submittedModel.CheckInId);
+
+                // E004CI: Record not found — surface the error to the user and abort the update.
                 TempData["Error"] = "Check-in not found.";
                 TempData["Code"] = "E004CI";
                 return FailedCheckIn("Check-in not found.");
             }
 
+            // Apply the submitted changes to the retrieved entity.
+            // Note: StudentId and DropOffLocationId are intentionally excluded from editing.
             existingCheckIn.Name = submittedModel.Name;
             existingCheckIn.Comments = submittedModel.Comments;
             existingCheckIn.FirstTime = submittedModel.FirstTime;
             existingCheckIn.LocationId = submittedModel.LocationId;
-            existingCheckIn.IsActive = true;
-            existingCheckIn.Date = submittedModel.UtcDate;
+            existingCheckIn.IsActive = true;                  // Editing a check-in always marks it as active.
+            existingCheckIn.Date = submittedModel.UtcDate;    // Date is stored in UTC.
 
+            // Persist the updated entity to the data store.
             _checkInService.UpdateEntity(existingCheckIn);
 
             _logger.LogInformation("Check-in updated successfully for CheckInId: {CheckInId}", submittedModel.CheckInId);
 
+            // S002CI: Successful update — notify the user and redirect to the full check-in list.
             TempData["Success"] = "Check-in updated successfully.";
             TempData["Code"] = "S002CI";
-
             return RedirectToAction("ViewAll", "CheckIn");
         }
 
+        /// <summary>
+        /// Displays a list of all check-ins, optionally showing archived (inactive) records.
+        /// Accessible by Admin and Driver roles.
+        /// </summary>
+        /// <param name="viewArchived">
+        /// When <c>true</c>, returns only inactive (archived) check-ins.
+        /// When <c>false</c> (default), returns only active check-ins.
+        /// </param>
+        /// <returns>The CheckInTable view populated with the filtered list of check-ins.</returns>
         [HttpGet]
         [Authorize(Roles = "Admin,Driver")]
         public ActionResult ViewAll(bool viewArchived = false)
         {
+            // Clear any lingering TempData from previous actions (e.g. success/error messages from EditCheckIn).
             TempData.Clear();
 
             _logger.LogInformation("ViewAll check-ins requested. viewArchived: {ViewArchived}", viewArchived);
 
+            // Query check-ins with their related location data, filtered by active/archived status.
+            // Include() ensures Location and DropOffLocation are eagerly loaded to avoid N+1 queries in the view.
             var checkins = _context.CheckIns
                 .Include(c => c.Location)
                 .Include(c => c.DropOffLocation)
-                .Where(c => c.IsActive == !viewArchived)
+                .Where(c => c.IsActive == !viewArchived) // Active records when viewArchived=false; inactive when true.
                 .ToList();
 
+            // Pass the current archive filter state to the view to toggle UI elements (e.g. active tab, button labels).
             ViewData["Archives"] = viewArchived;
 
             _logger.LogInformation("ViewAll returned {CheckInCount} check-ins. viewArchived: {ViewArchived}", checkins.Count, viewArchived);
@@ -274,8 +312,17 @@ namespace MidStateShuttleService.Controllers
             return View("CheckInTable", checkins);
         }
 
+        /// <summary>
+        /// Toggles the active/archived state of a check-in (active → archived, or archived → active).
+        /// Restricted to Admin role only.
+        /// </summary>
+        /// <param name="checkInId">The ID of the check-in whose active state will be toggled.</param>
+        /// <returns>
+        /// Redirects to ViewAll on success, or to the Dashboard Index on an unexpected error.
+        /// Returns a failure result if the check-in record cannot be found.
+        /// </returns>
         [Authorize(Roles = "Admin")] // DEV NOTE: Admin-only operation that toggles check-in active state.
-        [HttpPost] // DEV NOTE: Data modification endpoints should use POST instead of GET.
+        [HttpPost]                   // DEV NOTE: Data modification endpoints should use POST instead of GET.
         [ValidateAntiForgeryToken]
         public IActionResult ToggleCheckInActive(int checkInId)
         {
@@ -283,57 +330,83 @@ namespace MidStateShuttleService.Controllers
 
             try
             {
+                // Retrieve the check-in record to be toggled.
                 CheckIn existingCheckIn = _checkInService.GetEntityById(checkInId);
 
+                // Abort if the record does not exist — cannot toggle a non-existent check-in.
                 if (existingCheckIn == null)
                 {
                     _logger.LogWarning("ToggleCheckInActive failed. Check-in not found for CheckInId: {CheckInId}", checkInId);
                     return FailedCheckIn("Check-in could not be found.");
                 }
 
+                // Flip the active state: active check-ins become archived, archived become active.
                 existingCheckIn.IsActive = !existingCheckIn.IsActive;
 
+                // Persist the updated state to the data store.
                 _checkInService.UpdateEntity(existingCheckIn);
 
-                _logger.LogInformation("ToggleCheckInActive succeeded for CheckInId: {CheckInId}. New IsActive: {IsActive}", checkInId, existingCheckIn.IsActive);
+                _logger.LogInformation(
+                    "ToggleCheckInActive succeeded for CheckInId: {CheckInId}. New IsActive: {IsActive}",
+                    checkInId, existingCheckIn.IsActive);
 
                 return RedirectToAction("ViewAll");
             }
             catch (Exception exception)
             {
                 // DEV NOTE: Logging and SQL exception capture should remain centralized.
+                // Delegates structured SQL exception logging to the shared LogEvents utility
+                // to keep exception handling consistent across the application.
                 LogEvents.LogSqlException(exception, _environment);
 
                 _logger.LogError(exception,
                     "Error toggling check-in active status for CheckInId {CheckInId}",
                     checkInId);
 
-                TempData["ErrorMessage"] =
-                    "An unexpected error occurred while updating the check-in.";
+                // Surface a generic error message to the user — avoid exposing internal exception details.
+                TempData["ErrorMessage"] = "An unexpected error occurred while updating the check-in.";
 
+                // Redirect to the Dashboard rather than staying on the check-in page, as the list state is now uncertain.
                 return RedirectToAction("Index", "Dashboard");
             }
         }
 
+        /// <summary>
+        /// Restores an archived check-in by setting its active state to <c>true</c>.
+        /// Restricted to Admin role only.
+        /// </summary>
+        /// <param name="id">The ID of the archived check-in to restore.</param>
+        /// <returns>
+        /// Redirects to the archived ViewAll list on success, or returns a 404 Not Found if the record does not exist.
+        /// </returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Unarchive(int id)
         {
             _logger.LogInformation("Unarchive requested for CheckInId: {CheckInId}", id);
 
+            // Look up the check-in directly via the DbContext rather than the service layer.
+            // Note: Unlike ToggleCheckInActive, this method writes directly through _context — consider aligning
+            // with _checkInService.UpdateEntity() for consistency if the service layer adds validation logic later.
             var checkin = _context.CheckIns.Find(id);
 
+            // Return 404 if the record does not exist — no check-in to restore.
             if (checkin == null)
             {
                 _logger.LogWarning("Unarchive failed. Check-in not found for CheckInId: {CheckInId}", id);
                 return NotFound();
             }
 
+            // Explicitly set IsActive to true rather than toggling, since this action is unarchive-only.
+            // For a bidirectional toggle, see ToggleCheckInActive.
             checkin.IsActive = true;
+
+            // Persist the restored state directly through the DbContext.
             _context.SaveChanges();
 
             _logger.LogInformation("Unarchive succeeded for CheckInId: {CheckInId}", id);
 
+            // Redirect back to the archived list so the user can continue managing other archived check-ins.
             return RedirectToAction("ViewAll", new { viewArchived = true });
         }
 
@@ -347,16 +420,27 @@ namespace MidStateShuttleService.Controllers
             return View("FailedCheckIn");
         }
 
-        // DEV NOTE:
-        // Helper method used to build location dropdown options.
-        // If multiple controllers require this logic, it should be moved
-        // into LocationServices as something like GetLocationSelectList().
+        /// <summary>
+        /// Builds a list of <see cref="SelectListItem"/> entries from all active locations,
+        /// for use in check-in form dropdowns.
+        /// </summary>
+        /// <returns>
+        /// A list of <see cref="SelectListItem"/> where each entry represents an active location,
+        /// with <c>Text</c> set to the location name and <c>Value</c> set to the location ID.
+        /// </returns>
+        /// <remarks>
+        /// DEV NOTE: This is a controller-level helper scoped to check-in forms. If multiple controllers
+        /// require this logic, it should be moved into LocationService as something like GetLocationSelectList().
+        /// </remarks>
         private List<SelectListItem> GetLocationOptions()
         {
             _logger.LogInformation("Loading active location options for check-in dropdown.");
 
+            // Filter to active locations only — inactive locations should not appear as selectable options.
             var locations = _context.Locations.Where(l => l.IsActive);
 
+            // Project each location entity into a SelectListItem for use in dropdown rendering.
+            // Value is cast to string as SelectListItem.Value requires a string type.
             return locations.Select(location => new SelectListItem
             {
                 Text = location.Name,

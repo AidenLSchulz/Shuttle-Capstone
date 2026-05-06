@@ -25,8 +25,6 @@ namespace MidStateShuttleService
 
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(appConnectionString));
 
-            builder.Services.AddSingleton<IListService, ListServices>();
-
             builder.Services.AddScoped<EmailServices>();
 
             builder.Services.AddScoped<DriverServices>();

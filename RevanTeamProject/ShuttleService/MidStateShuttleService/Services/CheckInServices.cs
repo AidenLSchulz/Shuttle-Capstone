@@ -3,6 +3,7 @@ using MidStateShuttleService.Models;
 
 namespace MidStateShuttleService.Service
 {
+
     public class CheckInServices : BaseDbServices<CheckIn>
     {
         private readonly ApplicationDbContext _context;
@@ -12,6 +13,9 @@ namespace MidStateShuttleService.Service
             _context = dbContext;
         }
 
+        /// <summary>
+        /// Gets all the Entities in the Database
+        /// </summary>
         public override IEnumerable<CheckIn> GetAllEntities()
         {
             return _context.CheckIns

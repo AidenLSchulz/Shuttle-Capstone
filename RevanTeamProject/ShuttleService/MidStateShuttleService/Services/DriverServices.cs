@@ -9,7 +9,9 @@ namespace MidStateShuttleService.Service
         {
         }
 
-        // DEV NOTE: Only return active drivers for normal driver listings.
+        /// <summary>
+        /// Gets all the Drivers from the database
+        /// </summary>
         public override IEnumerable<Driver> GetAllEntities()
         {
             return _dbSet

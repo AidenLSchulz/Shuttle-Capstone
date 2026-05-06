@@ -10,7 +10,6 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
-
 <div class="form-container tiled-background-1">
     <div class="form-paper">
 
@@ -22,12 +21,14 @@
         </div>
 
         @{
-            var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday"};
+            <!-- Days are defined in order — GroupBy does not guarantee sort order so IndexOf is used to sort groups -->
+            var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday" };
+
             var groupedByDay = Model
             .GroupBy(r => r.DayOfWeek)
             .OrderBy(g => Array.IndexOf(days, g.Key.ToString()));
 
-            // Collect unique pickup locations for filter dropdown
+            <!-- Collect unique pick-up location names for the filter dropdown — only locations present in the model are included -->
             var allPickupLocations = Model
             .Select(r => r.PickUpLocation.Name)
             .Distinct()
@@ -35,6 +36,7 @@
             .ToList();
         }
 
+        <!-- Empty state — shown when no active, enabled routes exist (see ViewScheduleTable in RoutesController) -->
         @if (!Model.Any())
         {
             <div class="form-paper p-3" role="status">
@@ -43,9 +45,10 @@
         }
         else
         {
-            <!-- ── Filter bar ─────────────────────────────────────── -->
+            <!-- Filter bar — day and location filters are applied client-side by RouteSchedule.js -->
             <div class="filter-bar" role="search" aria-label="Filter schedule">
 
+                <!-- Day filter — options are only rendered for days that have at least one route -->
                 <div class="filter-group">
                     <label for="filter-day">Day of Week</label>
                     <select class="dropdown-midstate" id="filter-day" aria-label="Filter by day of week">
@@ -60,6 +63,7 @@
                     </select>
                 </div>
 
+                <!-- Location filter — populated from distinct pick-up location names in the current model -->
                 <div class="filter-group">
                     <label for="filter-location">Pickup Location</label>
                     <select class="dropdown-midstate" id="filter-location" aria-label="Filter by pickup location">
@@ -78,15 +82,17 @@
                 <button class="btn-midstate" id="filter-clear" type="button" aria-label="Clear filters">
                     ✕ Clear
                 </button>
+
             </div>
 
-            <!-- ── Schedule content ──────────────────────────────── -->
+            <!-- Schedule content — sections are shown/hidden by RouteSchedule.js based on active filters -->
             <div id="schedule-content" tabindex="-1">
 
                 @foreach (var dayGroup in groupedByDay)
                 {
                     var dayKey = dayGroup.Key.ToString().Replace(" ", "-");
 
+                    <!-- Day section — data-day is read by RouteSchedule.js for day filter matching -->
                     <section class="mb-4 day-section"
                              id="day-section-@dayKey"
                              data-day="@dayGroup.Key"
@@ -98,6 +104,7 @@
                         </h4>
 
                         @{
+                            <!-- Group routes within the day by pick-up location, ordered by earliest pick-up time -->
                             var groupedByPickup = dayGroup
                             .GroupBy(r => r.PickUpLocation.Name)
                             .OrderBy(g => g.Min(r => r.PickUpTime));
@@ -105,17 +112,19 @@
 
                         @foreach (var pickupGroup in groupedByPickup)
                         {
+                            <!-- IDs are generated from day and location to ensure uniqueness across the page -->
                             var tableId = $"table-{dayGroup.Key.ToString().Replace(" ", "-")}-{pickupGroup.Key.Replace(" ", "-")}";
                             var headerId = $"header-{tableId}";
                             var bodyId = $"body-{tableId}";
                             var cardId = $"card-{tableId}";
 
+                            <!-- Route card — data-day and data-location are read by RouteSchedule.js for filter matching -->
                             <div class="route-card"
                                  id="@cardId"
                                  data-day="@dayGroup.Key"
                                  data-location="@pickupGroup.Key">
 
-                                <!-- Accordion toggle header -->
+                                <!-- Accordion header — toggled by RouteSchedule.js; aria-expanded is updated on toggle -->
                                 <div class="route-card-header"
                                      id="@headerId"
                                      role="button"
@@ -134,7 +143,7 @@
                                     </span>
                                 </div>
 
-                                <!-- Collapsible body -->
+                                <!-- Collapsible route table — hidden by default, expanded on header click -->
                                 <div class="route-card-body" id="@bodyId" role="region" aria-labelledby="@headerId">
                                     <div class="inner">
                                         <div class="table-responsive">
@@ -144,6 +153,7 @@
                                                         <th scope="col">Shuttle Leaves</th>
                                                         <th scope="col">Shuttle Arrives</th>
                                                         <th scope="col">Final Destination</th>
+                                                        <!-- Message Riders column header is only rendered for Admin users -->
                                                         @if (User.IsInRole("Admin"))
                                                         {
                                                             <th scope="col"></th>
@@ -153,14 +163,17 @@
                                                 <tbody>
                                                     @foreach (var route in pickupGroup.OrderBy(r => r.PickUpTime))
                                                     {
+                                                        <!-- TimeSpan values are added to DateTime.Today to produce a formattable DateTime -->
                                                         var leaveTime = route.PickUpTime.HasValue ? DateTime.Today.Add(route.PickUpTime.Value).ToString("hh:mm tt") : "N/A";
                                                         var arriveTime = route.DropOffTime.HasValue ? DateTime.Today.Add(route.DropOffTime.Value).ToString("hh:mm tt") : "N/A";
 
+                                                        <!-- aria-label provides a full screen-reader description of the row -->
                                                         <tr tabindex="0"
                                                             aria-label="Leaving @leaveTime, arriving @arriveTime, Final Destination: @route.DropOffLocation.Name">
                                                             <td>@leaveTime</td>
                                                             <td>@arriveTime</td>
                                                             <td>@route.DropOffLocation.Name</td>
+                                                            <!-- Message Riders action is only rendered for Admin users -->
                                                             @if (User.IsInRole("Admin"))
                                                             {
                                                                 <td>

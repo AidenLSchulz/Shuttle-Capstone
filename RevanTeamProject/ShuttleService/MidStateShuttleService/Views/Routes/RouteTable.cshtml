@@ -6,18 +6,18 @@
 }
 
 @{
+    <!-- Sort routes by pick-up location then by pick-up time for consistent table ordering -->
     var routes = Model?
         .OrderBy(r => r.PickUpLocationID)
         .ThenBy(r => r.PickUpTime)
         .ToList();
 }
 
-
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
 <link rel="stylesheet" href="/css/RouteVisibility.css" />
 
-<!-- If true use the inverted version to show a difference -->
+<!-- When viewing archived routes, swap the background image to visually distinguish the archived state -->
 @if ((bool?)ViewData["Archives"] == true)
 {
     <style>
@@ -30,6 +30,7 @@
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- Page header — Add Route button is shown only to Admin users -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2>Routes</h2>
@@ -48,6 +49,7 @@
 
             @if (Model == null || !Model.Any())
             {
+                <!-- Empty state — shown when no routes exist for the current active/archived filter -->
                 <div class="form-paper p-3">
                     <p>No routes currently exist.</p>
                 </div>
@@ -56,13 +58,15 @@
             {
                 @foreach (var route in routes)
                 {
+                    <!-- Route card — data attributes are read by Table.js for client-side filtering and pagination -->
+                    <!-- route-disabled class is applied when Enabled=false to visually dim hidden routes -->
                     <div class="form-paper mb-4 p-4 position-relative route-card @(!route.Enabled ? "route-disabled" : "")"
                          data-pickup="@route.PickUpLocationID"
                          data-dropoff="@route.DropOffLocationID"
                          data-day="@route.DayOfWeek"
                          data-active="@(route.IsActive ? "true" : "false")">
 
-                        <!-- VISIBILITY INDICATOR (top-left) -->
+                        <!-- Visibility indicator — eye icon shows whether the route appears on the public schedule -->
                         <div class="visibility-indicator">
                             @if (route.Enabled)
                             {
@@ -77,7 +81,7 @@
 
                         <div class="route-card-inner d-flex flex-column flex-md-row justify-content-between gap-3">
 
-                            <!-- LEFT SIDE (INFO) -->
+                            <!-- Route info — displays pick-up/drop-off, day, times, and optional notes -->
                             <div class="route-info flex-grow-1">
 
                                 <h4 class="mb-1">
@@ -92,6 +96,7 @@
                                     <span><strong>Dropoff:</strong> @route.ToStringDropOffTime()</span>
                                 </div>
 
+                                <!-- Additional details are optional — section is hidden when the field is empty -->
                                 @if (!string.IsNullOrEmpty(route.AdditionalDetails))
                                 {
                                     <div class="mt-2 text-muted">
@@ -101,9 +106,10 @@
 
                             </div>
 
-                            <!-- RIGHT SIDE (ACTIONS) -->
+                            <!-- Action panel — Reservations is available to all roles; remaining actions are Admin-only -->
                             <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
 
+                                <!-- Reservations — navigates to the passenger list for this route; visible to all roles -->
                                 <a asp-controller="Register"
                                    asp-action="ViewPassengerList"
                                    asp-route-routeId="@route.RouteID"
@@ -114,6 +120,7 @@
 
                                 @if (User.IsInRole("Admin"))
                                 {
+                                    <!-- Update — navigates to the route edit form -->
                                     <a asp-controller="Routes"
                                        asp-action="Edit"
                                        asp-route-id="@route.RouteID"
@@ -122,26 +129,29 @@
                                         <span class="btn-text">Update</span>
                                     </a>
 
+                                    <!-- Message Riders — navigates to the communicate form pre-scoped to this route -->
                                     <a href="/Communicate?routeId=@route.RouteID"
                                        class="btn-midstate btn-midstatehover">
                                         <i class="bi bi-chat-dots-fill btn-icon"></i>
                                         <span class="btn-text">Message Riders</span>
                                     </a>
 
+                                    <!-- Toggle Visibility — flips the Enabled flag without affecting IsActive -->
                                     <form asp-controller="Routes"
                                           asp-action="ToggleVisibility"
                                           asp-route-id="@route.RouteID"
                                           method="post">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit"
-                                                class="btn-midstate btn-midstatehover">
+                                        <button type="submit" class="btn-midstate btn-midstatehover">
                                             <i class="bi bi-eye-fill btn-icon"></i>
                                             <span class="btn-text">Toggle Visibility</span>
                                         </button>
                                     </form>
 
+                                    <!-- Archive/Unarchive — toggled based on the current ViewData["Archives"] state -->
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
+                                        <!-- Unarchive — restores the route to active with Enabled=false pending admin review -->
                                         <form asp-action="Unarchive" method="post">
                                             <input type="hidden" name="id" value="@route.RouteID" />
                                             <button class="btn-midstate btn-midstatehover" type="submit">
@@ -152,13 +162,13 @@
                                     }
                                     else
                                     {
+                                        <!-- Archive — soft deletes the route by toggling IsActive -->
                                         <form asp-controller="Routes"
                                               asp-action="Delete"
                                               asp-route-id="@route.RouteID"
                                               method="post">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit"
-                                                    class="btn-midstate btn-midstatehover">
+                                            <button type="submit" class="btn-midstate btn-midstatehover">
                                                 <i class="bi bi-archive-fill btn-icon"></i>
                                                 <span class="btn-text">Archive</span>
                                             </button>
@@ -175,6 +185,7 @@
 
         </div>
 
+        <!-- Pagination controls — populated by tablePagination.js based on the route cards in routesTableBody -->
         <div id="pagination-controls-routes" class="pagination"></div>
 
     </div>

@@ -94,6 +94,11 @@ namespace MidStateShuttleService.Controllers
             }
         }
 
+        /// <summary>
+        /// Creates a new route pre-populated from an existing ride's location and timing data.
+        /// Intended as a shortcut to convert a custom ride submission into a reusable scheduled route.
+        /// Restricted to Admin role only.
+        /// </summary>
         [Authorize(Roles = "Admin")]
         public ActionResult CreateFromRide(int rideId)
         {
@@ -101,18 +106,20 @@ namespace MidStateShuttleService.Controllers
 
             Ride ride = _context.Rides.Where(r => r.RideId == rideId).FirstOrDefault();
             RequestDay rDay = _context.RequestDays.Where(d => d.RequestDayId == ride.RequestDayId).FirstOrDefault();
-
             WeekDay dayOfWeek = rDay.WeekDay;
 
-            //fallback incase of null
+            // DEV NOTE: This null check fires after ride is already dereferenced above (ride.RequestDayId).
+            // If ride is null, a NullReferenceException will be thrown before this point is reached.
+            // Move this check to immediately after the ride lookup to make the fallback effective.
             if (ride == null)
             {
                 _logger.LogWarning("CreateFromRide could not find RideId: {RideId}", rideId);
                 RedirectToAction(nameof(Create));
             }
 
+            // Build a new route from the ride's pick-up and drop-off locations.
+            // Drop-off time defaults to 30 minutes after the ride's drop-off time as a starting estimate.
             Routes route = new Routes();
-
             route.IsActive = true;
             route.PickUpTime = ride.DropOffTime.Value.ToTimeSpan();
             route.DropOffTime = route.PickUpTime.Value.Add(TimeSpan.FromMinutes(30));
@@ -123,11 +130,15 @@ namespace MidStateShuttleService.Controllers
             try
             {
                 RouteServices rs = new RouteServices(_context);
+
+                // DEV NOTE: IsActive is set twice — once above and once here. The second assignment is redundant.
                 route.IsActive = true;
+
                 rs.AddEntity(route);
 
                 _logger.LogInformation("Route created successfully from RideId: {RideId}", rideId);
 
+                // Set success state in both Session and TempData to cover session-based and redirect-based UI feedback.
                 HttpContext.Session.SetString("RouteSuccess", "true");
                 TempData["RouteSuccess"] = true;
 
@@ -137,12 +148,17 @@ namespace MidStateShuttleService.Controllers
             {
                 LogEvents.LogSqlException(ex, _environment);
                 _logger.LogError(ex, "An error occurred while creating the route.");
+
+                // Re-populate dropdowns and surface a generic error — the route view requires dropdown data to render.
                 LoadRouteDropdowns();
                 ModelState.AddModelError("", "An unexpected error occurred while creating the route.");
                 return View(route);
             }
         }
 
+        /// <summary>
+        /// Displays the edit form for an existing route. Restricted to Admin role only.
+        /// </summary>
         // GET: RoutesController/Edit/5
         [Authorize(Roles = "Admin")]
         public ActionResult Edit(int id)
@@ -161,6 +177,10 @@ namespace MidStateShuttleService.Controllers
             return View(route);
         }
 
+        /// <summary>
+        /// Handles submission of the route edit form and persists the updated route record.
+        /// Restricted to Admin role only.
+        /// </summary>
         // POST: RoutesController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -169,6 +189,7 @@ namespace MidStateShuttleService.Controllers
         {
             _logger.LogInformation("Routes Edit POST action called for RouteId: {RouteId}", id);
 
+            // Guard against form tampering by verifying the route ID matches the submitted model ID.
             if (id != updatedRoute.RouteID)
             {
                 _logger.LogWarning("Routes Edit POST received mismatched RouteId. UrlId: {UrlId}, ModelId: {ModelId}", id, updatedRoute.RouteID);
@@ -178,18 +199,23 @@ namespace MidStateShuttleService.Controllers
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Routes Edit POST failed ModelState validation for RouteId: {RouteId}", id);
+
+                // Re-populate dropdowns since ViewBag data is not persisted across POST requests.
                 LoadRouteDropdowns();
                 return View(updatedRoute);
             }
 
             try
             {
+                // Editing a route always marks it as active — editing an archived route implicitly restores it.
                 updatedRoute.IsActive = true;
+
                 _context.Update(updatedRoute);
                 _context.SaveChanges();
 
                 _logger.LogInformation("Route updated successfully for RouteId: {RouteId}", updatedRoute.RouteID);
 
+                // Set success state in both Session and TempData to cover session-based and redirect-based UI feedback.
                 HttpContext.Session.SetString("RouteSuccess", "true");
                 TempData["RouteSuccess"] = true;
                 TempData["SuccessMessage"] = "The route has been successfully updated!";
@@ -198,35 +224,50 @@ namespace MidStateShuttleService.Controllers
             }
             catch (Exception ex)
             {
+                // DEV NOTE: Unlike most other edit actions in this codebase that return the form view on failure,
+                // this catch block redirects to the Dashboard. The unsaved changes and any model errors are lost.
+                // Consider returning View(updatedRoute) with a model error for consistency.
                 LogEvents.LogSqlException(ex, _environment);
                 _logger.LogError(ex, "An error occurred while updating the route.");
                 return RedirectToAction("Index", "Dashboard");
             }
         }
 
+        /// <summary>
+        /// Displays a list of all routes, optionally showing archived (inactive) records.
+        /// Accessible by Admin and Driver roles.
+        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin,Driver")]
         public ActionResult ViewAll(bool viewArchived = false)
         {
             _logger.LogInformation("Routes ViewAll action called. ViewArchived: {ViewArchived}", viewArchived);
 
+            // Eagerly load pick-up and drop-off locations to avoid N+1 queries when rendering the route table.
             var routes = _context.Routes
                 .Include(r => r.PickUpLocation)
                 .Include(r => r.DropOffLocation)
                 .Where(r => r.IsActive == !viewArchived)
                 .ToList();
 
+            // Pass the current archive filter state to the view to drive UI elements such as tab state or button labels.
             ViewData["Archives"] = viewArchived;
 
             _logger.LogInformation("Routes ViewAll returning {RouteCount} routes.", routes.Count);
+
             return View("RouteTable", routes);
         }
 
+        /// <summary>
+        /// Displays the public-facing schedule table showing all routes that are both active and enabled.
+        /// </summary>
         [HttpGet]
         public ActionResult ViewScheduleTable()
         {
             _logger.LogInformation("Routes ViewScheduleTable action called.");
 
+            // Filter to routes that are both active (not archived) and enabled (visible on the schedule).
+            // A route can be active but disabled to temporarily hide it from the public schedule without archiving it.
             var routes = _context.Routes
                 .Include(r => r.PickUpLocation)
                 .Include(r => r.DropOffLocation)
@@ -234,10 +275,13 @@ namespace MidStateShuttleService.Controllers
                 .ToList();
 
             _logger.LogInformation("Routes ViewScheduleTable returning {RouteCount} routes.", routes.Count);
+
             return View("ScheduleTable", routes);
         }
 
-        // GET: RoutesController/Delete/5
+        /// <summary>
+        /// Toggles the "Enabled" bool, this is different than the one used to track if its archived
+        /// </summary>
         [Authorize(Roles = "Admin")]
         public ActionResult ToggleVisibility(int id)
         {
@@ -323,6 +367,10 @@ namespace MidStateShuttleService.Controllers
             return RedirectToAction("Index", "Dashboard");
         }
 
+        /// <summary>
+        /// Toggles the active/archived state of a route (active → archived, or archived → active).
+        /// Functionally acts as a soft delete for active routes. Restricted to Admin role only.
+        /// </summary>
         // POST: RoutesController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -342,10 +390,13 @@ namespace MidStateShuttleService.Controllers
                     return RedirectToAction("ViewAll");
                 }
 
+                // Flip the active state — active routes become archived, archived routes become active.
+                // Despite the action being named "Delete", no data is permanently removed.
                 route.IsActive = !route.IsActive;
                 _context.SaveChanges();
 
                 _logger.LogInformation("Route IsActive toggled successfully for RouteId: {RouteId}", id);
+
                 return RedirectToAction("ViewAll");
             }
             catch (Exception ex)
@@ -357,11 +408,19 @@ namespace MidStateShuttleService.Controllers
             }
             catch
             {
+                // DEV NOTE: This bare catch block is unreachable — the catch (Exception ex) block above
+                // already catches all exceptions including non-CLS-compliant ones in the .NET runtime.
+                // This block should be removed, or the two catches should be merged.
                 _logger.LogError("An unknown error occurred in Routes Delete POST for RouteId: {RouteId}", id);
                 return View();
             }
         }
 
+        /// <summary>
+        /// Restores an archived route by setting it as active, while explicitly disabling it
+        /// so it does not immediately appear on the public schedule until reviewed.
+        /// Restricted to Admin role only.
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Unarchive(int id)
@@ -376,21 +435,32 @@ namespace MidStateShuttleService.Controllers
                 return NotFound();
             }
 
+            // Restore the route to active but leave it disabled so an admin can review it
+            // before it reappears on the public-facing schedule. See ViewScheduleTable for the IsActive + Enabled filter.
             route.IsActive = true;
             route.Enabled = false;
             _context.SaveChanges();
 
             _logger.LogInformation("Route unarchived successfully for RouteId: {RouteId}", id);
+
             return RedirectToAction("ViewAll", new { viewArchived = true });
         }
 
+        /// <summary>
+        /// Returns a JSON array of active, enabled routes matching the given pick-up location,
+        /// drop-off location, and day of week. Intended to be called from client-side JavaScript
+        /// to dynamically populate route options in the registration form.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetRoutes(int pickupId, int dropoffId, int dayOfWeek)
         {
             _logger.LogInformation("Routes GetRoutes action called. PickupId: {PickupId}, DropoffId: {DropoffId}, DayOfWeek: {DayOfWeek}", pickupId, dropoffId, dayOfWeek);
 
+            // Cast the integer day of week to the WeekDay enum for the EF query filter.
             WeekDay weekDay = (WeekDay)dayOfWeek;
 
+            // Filter to routes matching all three criteria and visible on the public schedule.
+            // Both IsActive and Enabled must be true — see ViewScheduleTable for the same filter pattern.
             var routes = await _context.Routes
                 .Where(r =>
                     r.PickUpLocationID == pickupId &&
@@ -400,6 +470,8 @@ namespace MidStateShuttleService.Controllers
                     r.Enabled == true)
                 .ToListAsync();
 
+            // Project to an anonymous type with only the fields needed by the client.
+            // Times are formatted via FormatTime() for consistent display in the dropdown.
             var result = routes.Select(r => new
             {
                 id = r.RouteID,
@@ -407,7 +479,8 @@ namespace MidStateShuttleService.Controllers
                 dropoffTime = FormatTime(r.DropOffTime)
             });
 
-            _logger.LogInformation("Routes GetRoutes returning matching routes.");
+            _logger.LogInformation("Routes GetRoutes returning {RouteCount} matching routes.", routes.Count);
+
             return Json(result);
         }
 

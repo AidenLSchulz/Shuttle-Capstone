@@ -44,16 +44,14 @@ namespace MidStateShuttleService.Controllers
         }
 
         /// <summary>
-        /// Returns the list of Terms
+        /// Builds a select list from all values in the <see cref="SchoolTerm"/> enum,
+        /// using display-friendly names for the Text field and the raw enum string for the Value field.
         /// </summary>
-        /// <param name="getSummer"></param>
-        /// <returns></returns>
         private List<SelectListItem> GetSchoolTermSelectList()
         {
-            _logger.LogInformation("GetSchoolTermSelectList(bool) called.");
+            _logger.LogInformation("GetSchoolTermSelectList called.");
 
-            var terms = Enum.GetValues(typeof(SchoolTerm))
-                .Cast<SchoolTerm>();
+            var terms = Enum.GetValues(typeof(SchoolTerm)).Cast<SchoolTerm>();
 
             return terms
                 .Select(term => new SelectListItem
@@ -118,7 +116,11 @@ namespace MidStateShuttleService.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        //Completed the backend logic for a registration form submission
+        /// <summary>
+        /// Handles submission of the public registration form. Enforces IP-based rate limiting,
+        /// validates the submitted schedule data for standard (non-custom) requests, persists the
+        /// registration, and sends a confirmation email and admin notification on success.
+        /// </summary>
         [HttpPost]
         public ActionResult Register(RegisterModel model)
         {
@@ -128,10 +130,7 @@ namespace MidStateShuttleService.Controllers
             RegisterServices rs = new RegisterServices(_context);
 
             model.TimeOptions = GetTimeSelectList();
-
             model.InsertDateTime = DateTime.UtcNow;
-
-            // Repopulate LocationNames in case we return to the view
             model.LocationNames = ls.GetLocationNames();
 
             // ===============================
@@ -139,80 +138,53 @@ namespace MidStateShuttleService.Controllers
             // Prevents excessive form submissions per IP within a time window
             // ===============================
 
-            const int LIMIT = 10;               // Maximum allowed submissions per window
-            const int WINDOW_MINUTES = 5;       // Time window duration
+            const int LIMIT = 10;
+            const int WINDOW_MINUTES = 5;
 
             var now = DateTime.UtcNow;
-
-            // Identify user by IP address (basic rate-limiting key)
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var key = $"ratelimit_{ip}";
 
-            // ===============================
-            // Retrieve existing rate limit entry
-            // Stored as (RequestCount, FirstRequestTime)
-            // ===============================
             var entry = _cache.Get<(int Count, DateTime FirstAttempt)>(key);
 
-            // ===============================
-            // CASE 1: No entry OR window expired
-            // -> Start a new rate limit window
-            // ===============================
+            // CASE 1: No entry OR window expired — start a new rate limit window.
             if (entry == default || (now - entry.FirstAttempt).TotalMinutes > WINDOW_MINUTES)
             {
                 entry = (Count: 1, FirstAttempt: now);
-
                 _cache.Set(key, entry, TimeSpan.FromMinutes(WINDOW_MINUTES));
 
                 _logger.LogInformation(
                     "RateLimit RESET | IP: {IP} | New window started at {Time}",
-                    ip,
-                    now
-                );
+                    ip, now);
             }
             else
             {
-                // ===============================
-                // CASE 2: Existing active window
-                // -> Increment request count
-                // ===============================
+                // CASE 2: Active window exists — increment the request count.
                 entry.Count++;
 
-                // Calculate remaining time in the current window
                 var remaining = TimeSpan.FromMinutes(WINDOW_MINUTES) - (now - entry.FirstAttempt);
 
-                // Safety check: prevent negative or invalid cache expiration
+                // Prevent negative or zero cache expiration from causing an exception.
                 if (remaining <= TimeSpan.Zero)
                 {
                     remaining = TimeSpan.FromSeconds(1);
                 }
 
-                // Update cache with new count and remaining lifetime
                 _cache.Set(key, entry, remaining);
 
                 _logger.LogInformation(
                     "RateLimit HIT | IP: {IP} | Count: {Count}/{Limit} | ElapsedSec: {Elapsed}",
-                    ip,
-                    entry.Count,
-                    LIMIT,
-                    (now - entry.FirstAttempt).TotalSeconds
-                );
+                    ip, entry.Count, LIMIT, (now - entry.FirstAttempt).TotalSeconds);
             }
 
-            // ===============================
-            // ENFORCEMENT
-            // Block request if limit exceeded
-            // ===============================
+            // Block the request if the submission count has exceeded the limit for this window.
             if (entry.Count > LIMIT)
             {
                 _logger.LogWarning(
                     "RateLimit BLOCKED | IP: {IP} | Count: {Count} exceeded limit {Limit} | WindowStart: {FirstAttempt}",
-                    ip,
-                    entry.Count,
-                    LIMIT,
-                    entry.FirstAttempt
-                );
+                    ip, entry.Count, LIMIT, entry.FirstAttempt);
 
+                // E001RG: Rate limit exceeded — surface a user-facing message without exposing technical detail.
                 TempData["Error"] = "There have been too many submissions under your internet. Please wait before trying again.";
                 TempData["Code"] = "E001RG";
                 ViewBag.Terms = GetSchoolTermSelectList();
@@ -223,16 +195,14 @@ namespace MidStateShuttleService.Controllers
             // END RATE LIMITER
             // ===============================
 
-
             if (ModelState.IsValid)
             {
                 _logger.LogInformation("ModelState is valid for registration submission.");
 
-                // -------- VALIDATION SECTION --------
-
+                // Custom requests skip schedule validation — they supply a free-text message instead.
                 if (!model.isCustom)
                 {
-                    // Ensure days are not repeated
+                    // E005RG: Duplicate days — each weekday may only appear once in a schedule.
                     if (model.DaySchedules != null)
                     {
                         var duplicateDays = model.DaySchedules
@@ -251,9 +221,10 @@ namespace MidStateShuttleService.Controllers
                         }
                     }
 
-                    // Ensure no request day has zero rides — check this BEFORE the has-any-rides check
+                    // E003RG: Empty day — checked before the has-any-rides check so this more specific
+                    // error takes precedence over the general no-rides error below.
                     bool emptyDayExists = model.DaySchedules != null &&
-                                            model.DaySchedules.Any(d => d.Rides == null || !d.Rides.Any());
+                                          model.DaySchedules.Any(d => d.Rides == null || !d.Rides.Any());
 
                     if (emptyDayExists)
                     {
@@ -264,9 +235,9 @@ namespace MidStateShuttleService.Controllers
                         return View("Index", model);
                     }
 
-                    // Ensure at least one ride exists overall
+                    // E002RG: No rides at all across any day.
                     bool hasRide = model.DaySchedules != null &&
-                                    model.DaySchedules.Any(d => d.Rides != null && d.Rides.Any());
+                                   model.DaySchedules.Any(d => d.Rides != null && d.Rides.Any());
 
                     if (!hasRide)
                     {
@@ -277,13 +248,13 @@ namespace MidStateShuttleService.Controllers
                         return View("Index", model);
                     }
 
-                    // Ensure each ride has either Route OR Time
+                    // E004RG: Each ride must supply either a linked route or a manual drop-off time.
                     bool invalidRide = model.DaySchedules != null &&
                                        model.DaySchedules.Any(d =>
-                                            d.Rides != null &&
-                                            d.Rides.Any(r =>
-                                                r.RouteId == null &&
-                                                string.IsNullOrWhiteSpace(r.DropOffTime.ToString())));
+                                           d.Rides != null &&
+                                           d.Rides.Any(r =>
+                                               r.RouteId == null &&
+                                               string.IsNullOrWhiteSpace(r.DropOffTime.ToString())));
 
                     if (invalidRide)
                     {
@@ -295,44 +266,37 @@ namespace MidStateShuttleService.Controllers
                     }
                 }
 
-                // -------- SAVE REGISTRATION --------
-
                 if (rs.AddEntity(model))
                 {
                     _logger.LogInformation("Registration saved successfully. RegistrationId: {RegistrationId}", model.RegistrationId);
 
+                    // Increment the session-tracked registration count for the admin dashboard badge.
                     int registrationCount = HttpContext.Session.GetInt32("RegistrationCount") ?? 0;
                     registrationCount++;
-
                     HttpContext.Session.SetInt32("RegistrationCount", registrationCount);
 
-                    string emailBody = "";
-
-
+                    // Build and send the HTML confirmation email to the admin.
+                    // DEV NOTE: _emailServices is null-checked here — if email is not configured,
+                    // the registration still succeeds but no confirmation is sent.
+                    string emailBody = BuildEmailForRegisterSubmit(model.RegistrationId);
                     _logger.LogInformation("Building standard registration email for RegistrationId: {RegistrationId}", model.RegistrationId);
-                    emailBody = BuildEmailForRegisterSubmit(model.RegistrationId);
-                    
 
                     if (_emailServices != null)
                     {
                         _emailServices.SendEmailToAdmin(
                             "MSTC Shuttle Service Request Confirmation",
                             emailBody,
-                            isHtml: true
-                        );
+                            isHtml: true);
                     }
-                    
 
                     _logger.LogInformation("Admin email sent for RegistrationId: {RegistrationId}", model.RegistrationId);
 
-                    //Send notification for the admin page
-
+                    // Dispatch an admin dashboard notification linked to the new registration.
                     Notification notif = new Notification();
                     notif.Subject = "New Request";
                     notif.Body = "A new request was created for " + model.Name + "!";
                     notif.TimeSent = DateTime.Now;
                     notif.RegistrationId = model.RegistrationId;
-
                     new NotificationService(_context).SendNotification(notif);
 
                     _logger.LogInformation("Notification sent for RegistrationId: {RegistrationId}", model.RegistrationId);
@@ -362,20 +326,25 @@ namespace MidStateShuttleService.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult ViewAll(bool viewArchived = false)
         {
+            // Clear any lingering TempData from previous actions (e.g. success/error messages from archive or edit actions).
             TempData.Clear();
 
             _logger.LogInformation("ViewAll action called. viewArchived: {ViewArchived}", viewArchived);
 
+            // Load registrations with their full day and ride schedule, including route details per ride.
+            // Rides without a route are custom requests and will have a null Route navigation property.
             var registrations = _context.RegisterModels
                 .Include(r => r.DaySchedules)
-                .ThenInclude(d => d.Rides)
-                .ThenInclude(r => r.Route)
+                    .ThenInclude(d => d.Rides)
+                        .ThenInclude(r => r.Route)
                 .Where(r => r.IsArchived == viewArchived)
                 .ToList();
 
+            // Pass the current archive filter state to the view to drive UI elements such as tab state or button labels.
             ViewData["Archives"] = viewArchived;
 
             _logger.LogInformation("ViewAll action returning {Count} registrations.", registrations.Count);
+
             return View("RegistrationTable", registrations);
         }
 
@@ -697,72 +666,126 @@ namespace MidStateShuttleService.Controllers
             return Json(formattedRoutesList);
         }
 
+        /// <summary>
+        /// Restores an archived registration by explicitly setting its <c>IsArchived</c> flag to <c>false</c>.
+        /// Restricted to Admin role only.
+        /// </summary>
+        /// <param name="id">The ID of the archived registration to restore.</param>
+        /// <returns>
+        /// Redirects to the archived ViewAll list on success, or returns a 404 Not Found
+        /// if the registration does not exist.
+        /// </returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Unarchive(int id)
         {
             _logger.LogInformation("Unarchive action called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels.Find(id);
 
+            // Return 404 if the record does not exist — no registration to restore.
             if (registration == null)
             {
                 _logger.LogWarning("Unarchive could not find RegistrationId: {RegistrationId}", id);
+
+                // E012RG: Registration not found during unarchive attempt.
                 TempData["Error"] = "Registration not found.";
                 TempData["Code"] = "E012RG";
                 return NotFound();
             }
 
+            // Explicitly set IsArchived to false rather than toggling — this action is unarchive-only.
+            // For archiving, see ArchiveRegistration below.
             registration.IsArchived = false;
             _context.SaveChanges();
 
             _logger.LogInformation("Unarchive completed for RegistrationId: {RegistrationId}", id);
+
+            // S003RG: Successful unarchive — redirect to the archived list so the admin can continue
+            // managing other archived registrations.
             TempData["Success"] = "Registration unarchived successfully.";
             TempData["Code"] = "S003RG";
+
             return RedirectToAction("ViewAll", new { viewArchived = true });
         }
 
+        /// <summary>
+        /// Archives a registration by setting its <c>IsArchived</c> flag to <c>true</c>.
+        /// Performs an additional runtime role check beyond the standard authorization pipeline.
+        /// </summary>
+        /// <param name="id">The ID of the registration to archive.</param>
+        /// <returns>
+        /// Redirects to ViewAll on success, returns 404 Not Found if the registration does not exist,
+        /// or returns 403 Forbidden if the caller is not in the Admin role.
+        /// </returns>
+        /// <remarks>
+        /// DEV NOTE: This action has no [Authorize] attribute and relies entirely on a manual
+        /// User.IsInRole("Admin") check at runtime. This is inconsistent with the rest of the
+        /// codebase and means unauthenticated users can reach the action before the role check fires.
+        /// Consider adding [Authorize(Roles = "Admin")] to align with the established pattern.
+        /// </remarks>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ArchiveRegistration(int id)
         {
             _logger.LogInformation("ArchiveRegistration action called for RegistrationId: {RegistrationId}", id);
+
             var registration = _context.RegisterModels.FirstOrDefault(r => r.RegistrationId == id);
 
+            // Return 404 if the record does not exist — no registration to archive.
             if (registration == null)
             {
                 _logger.LogWarning("ArchiveRegistration could not find RegistrationId: {RegistrationId}", id);
+
+                // E013RG: Registration not found during archive attempt.
                 TempData["Error"] = "Registration not found.";
                 TempData["Code"] = "E013RG";
                 return NotFound();
             }
 
+            // Runtime role check — returns 403 Forbidden if the authenticated user is not an Admin.
+            // DEV NOTE: This check is redundant if [Authorize(Roles = "Admin")] is added to the action,
+            // and should be removed once the attribute is in place.
             if (!User.IsInRole("Admin"))
             {
                 _logger.LogWarning("ArchiveRegistration forbidden for RegistrationId: {RegistrationId}. User is not Admin.", id);
+
+                // E014RG: Caller lacks the Admin role required to archive registrations.
                 TempData["Error"] = "You do not have permission to archive registrations.";
                 TempData["Code"] = "E014RG";
                 return Forbid();
             }
 
+            // Explicitly set IsArchived to true — for restoring an archived registration, see Unarchive above.
             registration.IsArchived = true;
             _context.SaveChanges();
 
             _logger.LogInformation("ArchiveRegistration completed for RegistrationId: {RegistrationId}", id);
+
+            // S004RG: Successful archive — redirect to the active list.
             TempData["Success"] = "Registration archived successfully.";
             TempData["Code"] = "S004RG";
+
             return RedirectToAction("ViewAll");
         }
 
         private JsonResult GetRouteInfo(int pickUpLocationId, int dropOffLocationId)
         {
-            _logger.LogInformation("GetRouteInfo called. PickUpLocationId: {PickUpLocationId}, DropOffLocationId: {DropOffLocationId}", pickUpLocationId, dropOffLocationId);
+            _logger.LogInformation(
+                "GetRouteInfo called. PickUpLocationId: {PickUpLocationId}, DropOffLocationId: {DropOffLocationId}",
+                pickUpLocationId, dropOffLocationId);
 
+            // Retrieve all routes matching the given location pair, filtered to active routes only.
             RouteServices rs = new RouteServices(_context);
-            var routesList = rs.GetRoutesByLocations(pickUpLocationId, dropOffLocationId).Where(route => route.IsActive).ToList();
+            var routesList = rs.GetRoutesByLocations(pickUpLocationId, dropOffLocationId)
+                .Where(route => route.IsActive)
+                .ToList();
 
+            // Project each route entity into an anonymous object formatted for JSON serialization.
+            // Location names are resolved by ID via LocationServices rather than relying on navigation properties.
             LocationServices ls = new LocationServices(_context);
-
             var formattedRoutesList = new List<object>();
+
             foreach (var r in routesList)
             {
                 formattedRoutesList.Add(new
@@ -772,11 +795,12 @@ namespace MidStateShuttleService.Controllers
                     PickupTime = r.ToStringPickUpTime(),
                     DropOffLocation = ls.getLocationNameById(r.DropOffLocationID),
                     DropOffTime = r.ToStringDropOffTime(),
-                    AdditionalDetails = r.AdditionalDetails != null ? r.AdditionalDetails : null
+                    AdditionalDetails = r.AdditionalDetails != null ? r.AdditionalDetails : null  // DEV NOTE: No-op — see remarks.
                 });
             }
 
             _logger.LogInformation("GetRouteInfo returning {Count} routes.", formattedRoutesList.Count);
+
             return Json(formattedRoutesList);
         }
 
@@ -822,12 +846,29 @@ namespace MidStateShuttleService.Controllers
         }
 
         /// <summary>
-        /// Builds the email confirmation body for a registration request.
+        /// Builds an HTML email confirmation body for a submitted registration request,
+        /// including the registrant's details and their full requested ride schedule.
         /// </summary>
+        /// <param name="id">The ID of the registration to build the email for.</param>
+        /// <returns>
+        /// An HTML string representing the confirmation email body, or a minimal error HTML
+        /// string if the registration record cannot be found.
+        /// </returns>
+        /// <remarks>
+        /// DEV NOTE: This method performs multiple levels of eager loading via chained Include/ThenInclude
+        /// calls. If registration records grow large, consider projecting only the required fields
+        /// rather than loading full entity graphs.
+        ///
+        /// DEV NOTE: This method builds raw HTML via string interpolation. If email templates become
+        /// more complex or need to be editable without a code change, consider moving to a Razor
+        /// view or a dedicated templating library.
+        /// </remarks>
         private string BuildEmailForRegisterSubmit(int id)
         {
             _logger.LogInformation("BuildEmailForRegisterSubmit called for RegistrationId: {RegistrationId}", id);
 
+            // Eagerly load the full schedule graph needed to render ride details in the email.
+            // Each ThenInclude chain resolves a different navigation path on the ride entity.
             var registration = _context.RegisterModels
                 .Include(r => r.DaySchedules)
                     .ThenInclude(d => d.Rides)
@@ -845,19 +886,21 @@ namespace MidStateShuttleService.Controllers
                             .ThenInclude(r => r.DropOffLocation)
                 .FirstOrDefault(r => r.RegistrationId == id);
 
+            // Return a minimal error HTML body if the registration cannot be found.
             if (registration == null)
             {
                 _logger.LogWarning("BuildEmailForRegisterSubmit could not find RegistrationId: {RegistrationId}", id);
                 return "<p>Registration not found.</p>";
             }
 
+            // Resolve display values for fields that require formatting or fallback text.
             string isAdultText = registration.IsAdult ? "Adult Rider" : "Minor Rider";
             string sId = string.IsNullOrEmpty(registration.StudentId) ? "N/A" : registration.StudentId;
-
-
-            string scheduleSections = "";
             string termText = registration.Term.ToString();
             string lengthText = registration.LengthOfRequest.ToString();
+
+            // Build the per-day schedule sections by iterating over each day and its rides.
+            string scheduleSections = "";
 
             if (registration.DaySchedules != null)
             {
@@ -869,217 +912,145 @@ namespace MidStateShuttleService.Controllers
                     {
                         foreach (var ride in day.Rides)
                         {
+                            // Format the drop-off time, falling back to "N/A" if not set.
                             string dropOffTime = ride.DropOffTime.HasValue
                                 ? ride.DropOffTime.Value.ToString("hh:mm tt")
                                 : "N/A";
 
                             if (ride.Route != null)
                             {
+                                // Ride is linked to a scheduled route — use the route's defined times and locations.
+                                // TimeSpan values are added to DateTime.Today to produce a formattable DateTime.
                                 string routeLeaveTime = ride.Route.PickUpTime.HasValue
                                     ? DateTime.Today.Add(ride.Route.PickUpTime.Value).ToString("hh:mm tt")
                                     : "N/A";
+
                                 string routeArriveTime = ride.Route.DropOffTime.HasValue
                                     ? DateTime.Today.Add(ride.Route.DropOffTime.Value).ToString("hh:mm tt")
                                     : "N/A";
 
                                 rideRows += $@"
-                                <tr>
-                                    <td style='padding: 10px 16px;'>{ride.Route.PickUpLocation?.Name ?? "Unknown"}</td>
-                                    <td style='padding: 10px 16px;'>{ride.Route.DropOffLocation?.Name ?? "Unknown"}</td>
-                                    <td style='padding: 10px 16px;'>{routeLeaveTime} > {routeArriveTime}</td>
-                                </tr>";
+                        <tr>
+                            <td style='padding: 10px 16px;'>{ride.Route.PickUpLocation?.Name ?? "Unknown"}</td>
+                            <td style='padding: 10px 16px;'>{ride.Route.DropOffLocation?.Name ?? "Unknown"}</td>
+                            <td style='padding: 10px 16px;'>{routeLeaveTime} > {routeArriveTime}</td>
+                        </tr>";
                             }
                             else
                             {
-                                rideRows += $@"    
-                                <tr>
-                                    <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
-                                    <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
-                                    <td style='padding: 10px 16px;'>{dropOffTime}</td>
-                                </tr>";
+                                // Ride is a custom (non-route) request — use the ride's own location and time fields.
+                                rideRows += $@"
+                        <tr>
+                            <td style='padding: 10px 16px;'>{ride.PickUpLocation?.Name ?? "Unknown"}</td>
+                            <td style='padding: 10px 16px;'>{ride.DropOffLocation?.Name ?? "Unknown"}</td>
+                            <td style='padding: 10px 16px;'>{dropOffTime}</td>
+                        </tr>";
                             }
                         }
                     }
                     else
                     {
+                        // No rides were scheduled for this day — render a placeholder row.
                         rideRows = "<tr><td colspan='3' style='padding: 10px 16px; color:#888;'>No rides scheduled for this day.</td></tr>";
                     }
 
                     scheduleSections += $@"
-                <h3 style='margin: 24px 0 8px; color: #8B0000;'>{day.WeekDay}</h3>
-                <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse: collapse; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; margin-bottom: 16px;'>
-                    <thead>
-                        <tr style='background-color: #8B0000; color: white;'>
-                            <th style='padding: 10px 16px; text-align: left;'>Pick-Up</th>
-                            <th style='padding: 10px 16px; text-align: left;'>Drop-Off</th>
-                            <th style='padding: 10px 16px; text-align: left;'>Arrival Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rideRows}
-                    </tbody>
-                </table>";
+        <h3 style='margin: 24px 0 8px; color: #8B0000;'>{day.WeekDay}</h3>
+        <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse: collapse; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; margin-bottom: 16px;'>
+            <thead>
+                <tr style='background-color: #8B0000; color: white;'>
+                    <th style='padding: 10px 16px; text-align: left;'>Pick-Up</th>
+                    <th style='padding: 10px 16px; text-align: left;'>Drop-Off</th>
+                    <th style='padding: 10px 16px; text-align: left;'>Arrival Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rideRows}
+            </tbody>
+        </table>";
                 }
             }
 
             _logger.LogInformation("BuildEmailForRegisterSubmit completed for RegistrationId: {RegistrationId}", id);
 
+            // Render the full HTML email body using the resolved values and assembled schedule sections.
+            // The special request block is conditionally included only for custom registrations with a message.
             return $@"
-            <html>
-            <body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
+    <html>
+    <body style='font-family: Arial, sans-serif; color: #333; max-width: 680px; margin: 0 auto; padding: 24px;'>
 
-                <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
-                    <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
-                    <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
-                </div>
+        <div style='background-color: #8B0000; padding: 24px; border-radius: 6px 6px 0 0;'>
+            <h1 style='margin: 0; color: white; font-size: 20px;'>MSTC Shuttle Service</h1>
+            <p style='margin: 4px 0 0; color: #f5c0c0; font-size: 14px;'>Registration Request Confirmation</p>
+        </div>
 
-                <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
+        <div style='background: #fff; border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 6px 6px;'>
 
-                    <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
+            <h2 style='margin: 0 0 16px; font-size: 18px;'>{registration.Name}</h2>
 
-                    <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
-                            <td style='padding: 6px 0;'>{sId}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Email</td>
-                            <td style='padding: 6px 0;'>{registration.Email}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Phone</td>
-                            <td style='padding: 6px 0;'>{registration.Phone}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Rider Status</td>
-                            <td style='padding: 6px 0;'>
-                                <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
-                                    {isAdultText}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Request Type</td>
-                            <td style='padding: 6px 0;'>
-                                <span style='background-color: {(registration.isCustom == true ? "#fff3e0" : "#e6f4ea")}; color: {(registration.isCustom == true ? "#e65100" : "#2e7d32")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
-                                    {(registration.isCustom == true ? "Special Request" : "Standard Request")}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Term</td>
-                            <td style='padding: 6px 0;'>{termText}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 6px 0; color: #888;'>Length of Request</td>
-                            <td style='padding: 6px 0;'>{lengthText}</td>
-                        </tr>
-                    </table>
+            <table cellpadding='0' cellspacing='0' style='width: 100%; margin-bottom: 24px;'>
+                <tr>
+                    <td style='padding: 6px 0; color: #888; width: 140px;'>Student ID</td>
+                    <td style='padding: 6px 0;'>{sId}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Email</td>
+                    <td style='padding: 6px 0;'>{registration.Email}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Phone</td>
+                    <td style='padding: 6px 0;'>{registration.Phone}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Rider Status</td>
+                    <td style='padding: 6px 0;'>
+                        <span style='background-color: {(registration.IsAdult ? "#e6f4ea" : "#fff3e0")}; color: {(registration.IsAdult ? "#2e7d32" : "#e65100")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
+                            {isAdultText}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Request Type</td>
+                    <td style='padding: 6px 0;'>
+                        <span style='background-color: {(registration.isCustom == true ? "#fff3e0" : "#e6f4ea")}; color: {(registration.isCustom == true ? "#e65100" : "#2e7d32")}; padding: 2px 10px; border-radius: 12px; font-size: 13px;'>
+                            {(registration.isCustom == true ? "Special Request" : "Standard Request")}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Term</td>
+                    <td style='padding: 6px 0;'>{termText}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #888;'>Length of Request</td>
+                    <td style='padding: 6px 0;'>{lengthText}</td>
+                </tr>
+            </table>
 
-                    <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
+            <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
 
-                    <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
+            <h3 style='margin: 0 0 12px; font-size: 16px;'>Requested Schedule</h3>
 
-                    {scheduleSections}
+            {scheduleSections}
 
-                    {(registration.isCustom == true && !string.IsNullOrWhiteSpace(registration.customMessage) ? $@"
-                    <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
-                    <h3 style='margin: 0 0 12px; font-size: 16px;'>Special Request Details</h3>
-                    <div style='background-color: #fff8f0; border-left: 4px solid #e65100; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #333;'>
-                        {registration.customMessage}
-                    </div>" : "")}
+            {(registration.isCustom == true && !string.IsNullOrWhiteSpace(registration.customMessage) ? $@"
+            <hr style='border: none; border-top: 1px solid #eee; margin-bottom: 16px;'/>
+            <h3 style='margin: 0 0 12px; font-size: 16px;'>Special Request Details</h3>
+            <div style='background-color: #fff8f0; border-left: 4px solid #e65100; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #333;'>
+                {registration.customMessage}
+            </div>" : "")}
 
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
+            <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0 16px;'/>
 
-                    <p style='margin: 0; font-size: 13px; color: #888;'>
-                        This request will be reviewed by the shuttle program and is not guaranteed.
-                    </p>
+            <p style='margin: 0; font-size: 13px; color: #888;'>
+                This request will be reviewed by the shuttle program and is not guaranteed.
+            </p>
 
-                </div>
+        </div>
 
-            </body>
-            </html>";
+    </body>
+    </html>";
         }
 
-        /// <summary>
-        /// Builds the email confirmation body for a SPECIAL registration request.
-        /// </summary>
-        private string BuildEmailForSpecialRegisterSubmit(int id)
-        {
-            _logger.LogInformation("BuildEmailForSpecialRegisterSubmit called for RegistrationId: {RegistrationId}", id);
-
-            var registration = _context.RegisterModels
-                .FirstOrDefault(r => r.RegistrationId == id);
-
-            if (registration == null)
-            {
-                _logger.LogWarning("BuildEmailForSpecialRegisterSubmit could not find RegistrationId: {RegistrationId}", id);
-                return "<p>Registration not found.</p>";
-            }
-
-            string isAdultText = registration.IsAdult
-                ? "The Rider is an Adult"
-                : "The Rider is NOT an Adult";
-
-            string dateText = registration.customDate.HasValue
-                ? registration.customDate.Value.ToString("MMMM dd, yyyy")
-                : "Not Provided";
-
-            string time1Text = registration.customTime1.HasValue
-                ? registration.customTime1.Value.ToString("hh:mm tt")
-                : "Not Provided";
-
-            string time2Text = registration.customTime2.HasValue
-                ? registration.customTime2.Value.ToString("hh:mm tt")
-                : null;
-
-            string sId = "N/A";
-            if (registration.StudentId != "")
-            {
-                sId = registration.StudentId;
-            }
-
-            string html = $@"
-                <html>
-                <body style='font-family: Arial, sans-serif;'>
-                    <h2>MSTC Shuttle Service SPECIAL Request Confirmation</h2>
-
-                    <h3><strong>Student Name:</strong> {registration.Name}</h3>
-                    <h3><strong>Student Id:</strong> {sId}</h3>
-                    <p><strong>Email:</strong> {registration.Email}</p>
-                    <p><strong>Phone:</strong> {registration.Phone}</p>
-                    <p><strong>Status:</strong> {isAdultText}</p>
-
-                    <hr/>
-
-                    <h3>Special Ride Details</h3>
-
-                    <p><strong>Date:</strong> {dateText}</p>
-                    <p><strong>Time:</strong> {time1Text}</p>
-                ";
-
-            if (!string.IsNullOrEmpty(time2Text))
-            {
-                html += $"<p><strong>Return Time:</strong> {time2Text}</p>";
-            }
-
-            if (!string.IsNullOrWhiteSpace(registration.customMessage))
-            {
-                html += $@"
-                    <hr/>
-                    <h3>Additional Details</h3>
-                    <p>{registration.customMessage}</p>
-                    ";
-            }
-
-            html += @"
-                    <hr/>
-                </body>
-                </html>
-                ";
-
-            _logger.LogInformation("BuildEmailForSpecialRegisterSubmit completed for RegistrationId: {RegistrationId}", id);
-            return html;
-        }
     }
 }
