@@ -1,20 +1,28 @@
 ﻿@* @model MidStateShuttleService.Models.CheckIn *@
 @model MidStateShuttleService.ViewModels.CheckInViewModel
 
+<!-- Loads custom styling for check-in pages -->
 <link rel="stylesheet" href="/css/CheckIn.css" />
 
 <body>
+    <!-- Wrapper for layout and centering -->
     <div class="wrapper wrapper--w680">
+
+        <!-- Form posts back to EditCheckIn action -->
         <form asp-controller="CheckIn" asp-action="EditCheckIn" method="post" class="form form-1">
             <div class="form-body">
+
+                <!-- Page title -->
                 <h2 class="title">Edit Shuttle Check-in</h2>
 
+                <!-- Student ID input -->
                 <div class="input-fields">
                     <h6>Student ID</h6>
                     <input asp-for="StudentId" type="text" class="form-control input--style-1" id="studentid" placeholder="student id" />
                     <div class="div-line"></div>
-                </div>                
+                </div>
 
+                <!-- Name input with validation -->
                 <div class="input-fields">
                     <h6>Name</h6>
                     <input asp-for="Name" type="text" class="form-control input--style-1" id="name" placeholder="name" required />
@@ -24,10 +32,12 @@
                     </div>
                 </div>
 
+                <!-- Pickup and drop-off selection -->
                 <div class="row row-space">
                     <div class="col-6">
                         <div class="input-fields">
                             <h6>Pick-up Location</h6>
+                            <!-- Dropdown populated from LocationOptions -->
                             <select asp-for="LocationId"
                                     asp-items="Model.LocationOptions"
                                     class="form-control input--style-1" required>
@@ -43,6 +53,7 @@
                     <div class="col-6">
                         <div class="input-fields">
                             <h6>Drop-off Location</h6>
+                            <!-- Uses same LocationOptions list -->
                             <select asp-for="DropOffLocationId"
                                     asp-items="Model.LocationOptions"
                                     class="form-control input--style-1" required>
@@ -56,15 +67,19 @@
                     </div>
                 </div>
 
+                <!-- First-time rider selection -->
                 <div class="row row-space">
                     <div class="col-6">
                         <div class="input-fields">
                             <h6>First time rider</h6>
                             <div class="form-control input--style-radio-group">
+                                <!-- Radio buttons bound to boolean FirstTime -->
                                 <input asp-for="FirstTime" type="radio" value="true" class="form-check-input radio-style input--style-1" id="newRiderYes" required />
                                 <label class="radio-label-style" for="newRiderYes">Yes</label>
+
                                 <input asp-for="FirstTime" type="radio" value="false" class="form-check-input radio-style input--style-1" id="newRiderNo" required />
                                 <label class="radio-label-style" for="newRiderNo">No</label>
+
                                 <div class="div-line"></div>
                                 <div class="invalid-feedback">
                                     Must select one
@@ -72,22 +87,24 @@
                             </div>
                         </div>
                     </div>
-                </div>                
+                </div>
 
-                <!-- Adding in the time -->
+                <!-- Check-in date/time input -->
                 <div class="input-fields">
                     <h6 class="typetrip">Check-in Date</h6>
 
-                    <input asp-for="CentralDateTime" type="datetime-local" 
-                        class="form-control input--style-1" 
-                        id="checkInTime"
-                        value="@Model.CentralDateTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <!-- Uses datetime-local and pre-fills with formatted CentralDateTime -->
+                    <input asp-for="CentralDateTime" type="datetime-local"
+                           class="form-control input--style-1"
+                           id="checkInTime"
+                           value="@Model.CentralDateTime.ToString("yyyy-MM-ddTHH:mm")" />
                     <div class="div-line"></div>
                     <div class="invalid-feedback">
                         Max 255 characters
                     </div>
                 </div>
 
+                <!-- Comments field -->
                 <div class="input-fields">
                     <h6>Rider Comments / Suggestions</h6>
                     <textarea asp-for="Comments" class="form-control input--style-1" id="feedback" placeholder="Share your experience" rows="4" cols="50" maxlength="255"></textarea>
@@ -97,16 +114,23 @@
                     </div>
                 </div>
 
-                <input hidden asp-for="CheckInId" value="@Model.CheckInId"/>
+                <!-- Hidden fields used for update -->
+                <input hidden asp-for="CheckInId" value="@Model.CheckInId" />
+                <!-- Preserves original date if needed server-side -->
                 <input hidden type="datetime" asp-for="CentralDate" value="@Model.CentralDate" />
 
+                <!-- Action buttons -->
                 <div class="p-t-20">
+                    <!-- Submits form -->
                     <button type="submit" class="btn btn--radius btn--green">Save</button>
+
+                    <!-- Goes back to previous page -->
                     <button class="btn btn--radius btn--cancel" type="button" onclick="history.go(-1)">Cancel</button>
                 </div>
             </div>
         </form>
     </div>
 
+    <!-- JS for check-in behavior -->
     <script src="/js/CheckIn.js"></script>
 </body>

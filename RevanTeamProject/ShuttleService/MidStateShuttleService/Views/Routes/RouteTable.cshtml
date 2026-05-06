@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    <!-- Sets page title and uses shared admin layout -->
 }
 
 @{
@@ -11,9 +12,11 @@
         .OrderBy(r => r.PickUpLocationID)
         .ThenBy(r => r.PickUpTime)
         .ToList();
+    <!-- Sorts routes by pickup location, then by pickup time -->
 }
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
+<!-- Loads shared dashboard navigation -->
 
 <link rel="stylesheet" href="/css/RouteVisibility.css" />
 
@@ -42,11 +45,13 @@
                 <a asp-controller="Routes" asp-action="Create" class="btn btn-midstate">
                     Add Route
                 </a>
+                <!-- Admin-only button to create a new route -->
             }
         </div>
 
         <div id="routesTableBody">
 
+            <!-- Handles empty state -->
             @if (Model == null || !Model.Any())
             {
                 <!-- Empty state — shown when no routes exist for the current active/archived filter -->
@@ -87,6 +92,7 @@
                                 <h4 class="mb-1">
                                     @route.PickUpLocation.ToStringPickup() → @route.DropOffLocation.ToStringDropoff()
                                 </h4>
+                                <!-- Displays formatted pickup and dropoff locations -->
 
                                 <div>
                                     <span><strong>Day:</strong> @route.DayOfWeek.ToString()</span>
@@ -102,6 +108,7 @@
                                     <div class="mt-2 text-muted">
                                         <strong>Notes:</strong> @route.AdditionalDetails
                                     </div>
+                                    <!-- Optional additional route notes -->
                                 }
 
                             </div>
@@ -117,7 +124,7 @@
                                     <i class="bi bi-people-fill btn-icon"></i>
                                     <span class="btn-text">Reservations</span>
                                 </a>
-
+                                <!-- View passengers for this route -->
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <!-- Update — navigates to the route edit form -->
@@ -128,6 +135,7 @@
                                         <i class="bi bi-pencil-fill btn-icon"></i>
                                         <span class="btn-text">Update</span>
                                     </a>
+                                    <!-- Edit route -->
 
                                     <!-- Message Riders — navigates to the communicate form pre-scoped to this route -->
                                     <a href="/Communicate?routeId=@route.RouteID"
@@ -135,6 +143,7 @@
                                         <i class="bi bi-chat-dots-fill btn-icon"></i>
                                         <span class="btn-text">Message Riders</span>
                                     </a>
+                                    <!-- Send message to riders on this route -->
 
                                     <!-- Toggle Visibility — flips the Enabled flag without affecting IsActive -->
                                     <form asp-controller="Routes"
@@ -159,6 +168,7 @@
                                                 <span class="btn-text">Unarchive</span>
                                             </button>
                                         </form>
+                                        <!-- Restores archived route -->
                                     }
                                     else
                                     {
@@ -173,6 +183,7 @@
                                                 <span class="btn-text">Archive</span>
                                             </button>
                                         </form>
+                                        <!-- Archives route instead of deleting -->
                                     }
                                 }
 
@@ -187,9 +198,11 @@
 
         <!-- Pagination controls — populated by tablePagination.js based on the route cards in routesTableBody -->
         <div id="pagination-controls-routes" class="pagination"></div>
+        <!-- Pagination controls injected via JS -->
 
     </div>
 </div>
 
 <script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
+<!-- Handles pagination and client-side table behavior -->

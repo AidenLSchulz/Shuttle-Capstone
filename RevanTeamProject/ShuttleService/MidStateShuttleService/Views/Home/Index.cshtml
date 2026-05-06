@@ -1,65 +1,82 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Feedback>
 
 @{
+    // Sets page title for home page
     ViewData["Title"] = "Home Page";
 
+    // Page-specific styles and scripts
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    // Handles scroll behavior/animations on home page
     <script defer src="~/js/homeScroll.js"></script>
 }
 
-<!-- Include Bootstrap CSS -->
+<!-- Bootstrap and custom styles -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/Feedback.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 
-<!-- Include jQuery and Bootstrap JS -->
+<!-- jQuery and Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 
-<!--Hero Section-->
-
+<!-- Hero Section -->
 <section class="hero">
 
+    <!-- Overlay for visual styling -->
     <div class="hero_overlay"></div>
 
+    <!-- Main hero content container -->
     <div class="hero_content h-100 container-custom position-relative">
         <div class="d-flex h-100 align-items-center hero_content-width">
             <div class="text-white">
+
+                <!-- Main heading -->
                 <h1 class="hero_heading fw-bold mb-4">Mid-State Shuttle Service</h1>
+
+                <!-- Subheading -->
                 <p class="lead mb-4">Hop aboard our shuttle for travel to and between campuses.</p>
 
+                <!-- CTA: Navigate to ride request form -->
                 <a href="@Url.Action("Index", "Register")"
                    class="mt-2 btn btn-lg btn-outline-light">
                     Request a Ride Now
                 </a>
 
+                <!-- CTA: View schedule -->
                 <a class="mt-2 btn btn-lg btn-outline-light"
-                asp-area="" asp-controller="Routes" 
-                asp-action="ViewScheduleTable">View Schedule</a>
+                   asp-area="" asp-controller="Routes"
+                   asp-action="ViewScheduleTable">
+                    View Schedule
+                </a>
 
             </div>
         </div>
     </div>
 </section>
 
-
 <!-- Section with 3 Col's End-->
-<!-- Include success custom JS files -->
+<!-- Success Modal Trigger Script -->
 <script type="text/javascript">
     $(document).ready(function () {
+        // Reads success flag from TempData (used if feedback was submitted from home page)
         var registrationSuccess = '@TempData["FeedbackSuccess"]';
+
+        // Shows success modal if submission was successful
         if (registrationSuccess === 'True') {
             $('#successModal').modal('show');
         }
     });
 </script>
 
-
+<!-- Additional JS dependencies -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Custom JS for testimonials and validation -->
 <script src="/js/testimonialPagination.js"></script>
 <script src="/js/feedbackvalidation.js"></script>

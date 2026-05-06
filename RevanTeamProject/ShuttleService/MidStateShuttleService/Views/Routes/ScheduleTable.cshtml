@@ -1,12 +1,14 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Routes>
 @{
     ViewData["Title"] = "Route Schedule";
+    <!-- Sets page title -->
 }
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 <link rel="stylesheet" href="/css/HelpIcon.css" />
 <link rel="stylesheet" href="/css/RouteSchedule.css" />
+<!-- Styles for layout, inputs, help icons, and schedule display -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
@@ -19,7 +21,7 @@
                 <p class="mb-0">View shuttle routes organized by day of the week.</p>
             </div>
         </div>
-
+        <!-- Header section -->
         @{
             <!-- Days are defined in order — GroupBy does not guarantee sort order so IndexOf is used to sort groups -->
             var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday" };
@@ -34,6 +36,7 @@
             .Distinct()
             .OrderBy(n => n)
             .ToList();
+            <!-- Builds unique pickup location list for filtering -->
         }
 
         <!-- Empty state — shown when no active, enabled routes exist (see ViewScheduleTable in RoutesController) -->
@@ -42,6 +45,7 @@
             <div class="form-paper p-3" role="status">
                 <p>There are currently no routes scheduled.</p>
             </div>
+            <!-- Empty state when no routes exist -->
         }
         else
         {
@@ -61,6 +65,7 @@
                             }
                         }
                     </select>
+                    <!-- Filters routes by selected day -->
                 </div>
 
                 <!-- Location filter — populated from distinct pick-up location names in the current model -->
@@ -73,11 +78,13 @@
                             <option value="@loc">@loc</option>
                         }
                     </select>
+                    <!-- Filters routes by pickup location -->
                 </div>
 
                 <button class="btn-midstate" id="filter-search" type="button" aria-label="Search schedule">
                     Search
                 </button>
+                <!-- Triggers filtering -->
 
                 <button class="btn-midstate" id="filter-clear" type="button" aria-label="Clear filters">
                     ✕ Clear
@@ -98,6 +105,7 @@
                              data-day="@dayGroup.Key"
                              aria-labelledby="day-@dayKey"
                              tabindex="0">
+                        <!-- Section per day -->
 
                         <h4 class="mb-3" id="day-@dayKey">
                             <i class="bi bi-calendar-week me-2" aria-hidden="true"> </i>@dayGroup.Key
@@ -108,6 +116,7 @@
                             var groupedByPickup = dayGroup
                             .GroupBy(r => r.PickUpLocation.Name)
                             .OrderBy(g => g.Min(r => r.PickUpTime));
+                            <!-- Groups routes by pickup location -->
                         }
 
                         @foreach (var pickupGroup in groupedByPickup)
@@ -183,6 +192,7 @@
                                                                         Message Riders
                                                                     </a>
                                                                 </td>
+                                                                <!-- Admin-only action -->
                                                             }
                                                         </tr>
                                                     }

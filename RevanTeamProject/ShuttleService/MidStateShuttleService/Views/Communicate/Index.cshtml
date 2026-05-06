@@ -1,16 +1,19 @@
 ﻿@using MidStateShuttleService.Service
 @{
+    // Sets page title
     ViewData["Title"] = "Admin Dashboard";
 }
 
 @model MidStateShuttleService.Models.CommuncateModel
 
+<!-- Styles for form layout and inputs -->
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 <link rel="stylesheet" href="/css/HelpIcon.css" />
 <link rel="stylesheet" href="css/site.css" />
 <link rel="stylesheet" href="css/Communication/Communicate.css" />
 
+<!-- jQuery and Bootstrap JS for modal + interactions -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
@@ -18,54 +21,67 @@
     <div class="form-paper">
 
         <section class="form-section">
+            <!-- Page title -->
             <h2>Send Message</h2>
 
             @if (ViewData["RouteInfo"] != null)
             {
+                <!-- Hidden route ID when coming from a specific route -->
                 <input type="hidden" name="routeId" value="@ViewData["RouteId"]" />
 
                 <div class="form-group">
                     <label>Sending to route</label>
+
+                    <!-- Displays selected route info (read-only) -->
                     <p class="form-control midstate-textinput" style="background-color: #f8f8f8;">
                         @ViewData["RouteInfo"]
                     </p>
                 </div>
             }
 
+            <!-- Main form submission -->
             <form id="CommunicateForm" method="post" asp-action="Index">
                 @Html.AntiForgeryToken()
 
-                <!-- Pass in route id -->
+                <!-- Pass route ID into POST if available -->
                 @if (ViewData["RouteId"] != null)
                 {
                     <input type="hidden" name="routeId" value="@ViewData["RouteId"]" />
                 }
 
-                <!-- Message -->
+                <!-- Message input -->
                 <div class="form-group">
                     <label asp-for="message">Message</label>
+
+                    <!-- Limited to 160 characters (SMS-style constraint) -->
                     <textarea asp-for="message"
                               class="form-control midstate-textinput"
                               maxlength="160"
                               rows="4"
                               placeholder="Enter message..."></textarea>
+
+                    <!-- Validation message placeholder -->
                     <div id="message-Validation-Message" class="text-danger"></div>
                 </div>
 
-                <!-- Route Options -->
+                <!-- Route selection options (populated via JS) -->
                 <div class="form-group">
                     <div class="route-location-schedule">
                         <div id="routeOptions" class="radio-route-options"></div>
                     </div>
                 </div>
 
+                <!-- Informational note -->
                 <p class="trip-info" style="font-size: 0.9rem; color: #666;">
                     *Message will be sent to all students who requested the selected route.
                 </p>
 
-                <!-- Submit -->
+                <!-- Form buttons -->
                 <div class="form-group submit-group">
+                    <!-- Submit form -->
                     <button type="submit" class="btn-midstate btn-primary">Send</button>
+
+                    <!-- Cancel and return to dashboard -->
                     <button type="button"
                             class="btn-midstate btn-secondary"
                             onclick="location.href='../Dashboard'">
@@ -79,21 +95,29 @@
     </div>
 </div>
 
-<!-- Success Modal -->
+<!-- Success Modal (shown after successful message send) -->
 <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
+                <!-- Modal title -->
                 <h5 class="modal-title" id="successModalLabel">Message Sent</h5>
+
+                <!-- Close button -->
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+
             <div class="modal-body">
                 Message Sent Successfully!
             </div>
+
             <div class="modal-footer">
+                <!-- Return to dashboard -->
                 <button type="button" class="btn-midstate btn-primary" onclick="location.href='../../Dashboard'">Return</button>
+
+                <!-- Close modal to send another -->
                 <button type="button" class="btn-midstate btn-secondary" data-dismiss="modal">Send Another</button>
             </div>
         </div>
@@ -102,13 +126,17 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
+        // Reads success flag from TempData
         var communicationSuccess = '@TempData["CommunicationSuccess"]';
+
+        // Shows modal if message was successfully sent
         if (communicationSuccess === 'True') {
             $('#successModal').modal('show');
         }
     });
 </script>
 
+<!-- JS for route selection and communication logic -->
 <script src="~/js/Communication/Communicate.js"></script>
 <script src="~/js/Communication/shuttleSelect.js"></script>
 <script src="~/js/Registeration/routeVisibility.js"></script>

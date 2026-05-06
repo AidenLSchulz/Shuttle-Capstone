@@ -1,23 +1,30 @@
 ﻿@{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
+// Model represents the message being responded to
 @model MidStateShuttleService.Models.Message
 
+// Loads shared dashboard navigation
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
+<!-- Styles for form layout -->
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 
 <div class="form-container tiled-background-2">
     <div class="form-paper">
         <section class="form-section">
+
+            <!-- Page title -->
             <h2>Respond to Message</h2>
 
             <!-- Original Message Info -->
             <div class="form-group">
                 <label>From</label>
+                <!-- Displays sender name -->
                 <p class="form-control midstate-textinput" style="background-color: #f8f8f8;">
                     @Model.name
                 </p>
@@ -25,6 +32,7 @@
 
             <div class="form-group">
                 <label>Email</label>
+                <!-- Displays sender email -->
                 <p class="form-control midstate-textinput" style="background-color: #f8f8f8;">
                     @Model.Email
                 </p>
@@ -32,6 +40,7 @@
 
             <div class="form-group">
                 <label>Original Message</label>
+                <!-- Displays original message with wrapping enabled -->
                 <p class="form-control midstate-textinput"
                    style="background-color: #f8f8f8; overflow-wrap: break-word; word-break: break-word; height: auto;">
                     @Model.message
@@ -39,25 +48,35 @@
             </div>
 
             <!-- Response Form -->
+            <!-- Posts response to MessageRespond action with message ID -->
             <form method="post" asp-action="MessageRespond" asp-route-id="@Model.id">
                 @Html.AntiForgeryToken()
+
+                <!-- Hidden ID to ensure correct message is updated -->
                 <input type="hidden" name="id" value="@Model.id" />
 
                 <div class="form-group">
                     <label for="responseMessage">Your Response</label>
+
+                    <!-- Input for admin response (max 500 chars) -->
                     <textarea id="responseMessage"
                               name="responseMessage"
                               class="form-control midstate-textinput"
                               rows="5"
                               maxlength="500"
                               placeholder="Enter your response..."></textarea>
+
+                    <!-- Placeholder for validation errors -->
                     <div class="text-danger"></div>
                 </div>
 
                 <div class="form-group submit-group">
+                    <!-- Submit response -->
                     <button type="submit" class="btn-midstate btn-primary">
                         <i class="bi bi-send-fill me-1"></i> Send Response
                     </button>
+
+                    <!-- Cancel and return to messages list -->
                     <button type="button"
                             class="btn-midstate btn-secondary"
                             onclick="location.href='../Messages'">
@@ -71,19 +90,26 @@
 </div>
 
 <!-- Success Modal -->
+<!-- Displays confirmation after successful response -->
 <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
+                <!-- Modal title -->
                 <h5 class="modal-title" id="successModalLabel">Response Sent</h5>
+
+                <!-- Close button -->
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+
             <div class="modal-body">
                 Your response was sent successfully!
             </div>
+
             <div class="modal-footer">
+                <!-- Return to messages page -->
                 <button type="button" class="btn-midstate btn-primary"
                         onclick="location.href='../Messages'">
                     Return to Messages
@@ -93,11 +119,16 @@
     </div>
 </div>
 
+<!-- jQuery + Bootstrap for modal functionality -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
 <script type="text/javascript">
     $(document).ready(function () {
+        // Reads success flag from TempData
         var success = '@TempData["ResponseSuccess"]';
+
+        // Shows modal if response was successfully sent
         if (success === 'True') {
             $('#successModal').modal('show');
         }
