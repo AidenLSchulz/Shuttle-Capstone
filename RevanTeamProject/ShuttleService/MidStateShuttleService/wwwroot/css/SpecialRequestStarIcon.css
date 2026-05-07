@@ -1,0 +1,35 @@
+﻿.custom-star {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    font-size: 1.1rem;
+    background-color: #6d2b3d;
+    padding: 5px 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: inherit;
+    line-height: 1;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Individual icon colors */
+.custom-icon {
+    color: white;
+}
+
+.summer-icon {
+    color: #f4b400;
+}
+
+.winter-icon {
+    color: #2196f3;
+}
+
+.clock-icon {
+    color: lime;
+}
+
+.registration-card > .d-flex {
+    margin-bottom: 15px;
+}

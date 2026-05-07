@@ -21,7 +21,25 @@
             <section class="form-section main-form">
                 <h2>Thank you for choosing the Shuttle!</h2>
                 <h5>Please complete the form below to request transportation from the shuttle.</h5>
-                <h5>Don’t see what you are looking for? See information on Special Requests at the bottom of this form.</h5>
+                <div class="card mb-3 shadow-sm border-0">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+
+                        <div>
+                            <h6 class="mb-1 fw-bold">Need help?</h6>
+                            <p class="mb-0 text-muted">
+                                View the shuttle FAQ before submitting your request.
+                            </p>
+                        </div>
+
+                        <a class="btn btn-sm"
+                           href="~/Documents/Shuttle FAQ.pdf"
+                           target="_blank"
+                           style="background-color:#7a1c2e; border-color:#7a1c2e; color:white;">
+                            View FAQ
+                        </a>
+
+                    </div>
+                </div>
 
                 @using (Html.BeginForm("Register", "Register", FormMethod.Post, new { id = "registrationForm" }))
                 {
@@ -49,17 +67,48 @@
                         <span asp-validation-for="LengthOfRequest" class="text-danger"></span>
                     </div>
 
+                    <!-- DAY CARDS CONTAINER -->
+                    <div id="dayCardsContainer"></div>
+
                     <!-- ADD DAY BUTTON -->
                     <div class="form-group">
-                        
-                        <button type="button" class="btn-midstate btn-primary" id="addDayBtn">
-                            Add Day +
+
+                        <button type="button" class="btn-midstate btn-primary w-100" id="addDayBtn">
+                            <i class="bi bi-calendar-plus"></i> Add Day
                         </button>
                         <span class="help-icon" data-help="Add a Day of the week to make rides for.">?</span>
                     </div>
 
-                    <!-- DAY CARDS CONTAINER -->
-                    <div id="dayCardsContainer"></div>
+                <section class="form-section special-request">
+                    <p>Please provide additional details if any of the following apply:</p>
+                    <ul>
+                        <li>You need to travel to a different location for class.</li>
+                        <li>You are a Mid-State employee.</li>
+                        <li>This request is for a field trip.</li>
+                        <li>You need transportation to or from the dorms.</li>
+                        <li>You selected "Other" for length of request (please include the date(s) of your request).</li>
+                        <li>Please let us know any other information.</li>
+                    </ul>
+                </section>
+
+                <!-- SPECIAL REQUEST CHECKBOX -->
+                <div class="form-group terms-group">
+                    <div class="checkbox-midstate">
+                        <input asp-for="isCustom" type="checkbox" id="SpecialRequest" value="true" />
+                        <label for="SpecialRequest">
+                            I need to provide additional details.
+                        </label>
+                    </div>
+                </div>
+
+                    <!-- SPECIAL REQUEST NOTES -->
+                <div class="form-group" id="specialRequestNotes" style="display:none;">
+                        @Html.LabelFor(m => m.customMessage, "Ride Details")
+                        <span class="help-icon" data-help="Please fill out details about your request here.">?</span>
+                        @Html.TextAreaFor(m => m.customMessage,
+                                            5, 50,
+                                            new { @class = "midstate-textinput", placeholder = "Enter additional details..." })
+                    </div>
 
                     <!-- FULL NAME -->
                     <div class="form-group">
@@ -112,6 +161,26 @@
                         </div>
                     </div>
 
+                    <!-- Field trip -->
+                    <div class="form-group terms-group">
+                        <div class="checkbox-midstate">
+                        <input asp-for="IsFieldTrip" type="checkbox" id="IsFieldTrip" name="IsFieldTrip" value="true" />
+                        <label for="IsFieldTrip">
+                            Is this for a field trip?
+                        </label>
+                        </div>
+                    </div>
+
+                    <!-- Internal Inquiry -->
+                    <div class="form-group terms-group">
+                        <div class="checkbox-midstate">
+                        <input asp-for="IsInternalInquiry" type="checkbox" id="IsInternalInquiry" name="IsInternalInquiry" value="true" />
+                        <label for="IsInternalInquiry">
+                                Is this for an internal inquiry?
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- TERMS -->
                     <div class="form-group terms-group">
                         <div class="checkbox-midstate">
@@ -132,25 +201,7 @@
             </section>
 
             <!-- Special Request -->
-            <section class="form-section special-request">
-                <h5>Need to Schedule a Special Ride?</h5>
-                <p>Please submit a <strong>Special Request</strong> if:</p>
-                <ul>
-                    <li>Your ride is on a <strong>Friday</strong></li>
-                    <li>You only need to ride once</li>
-                    <li>You need to ride during Winterim, spring break, or the summer term.</li>
-                    <li>You need to go to another location for class.</li>
-                    <li>You are a Mid-State Employee</li>
-                    <li>All <strong>center</strong> rides are considered a special request. (AMETA, Simulation Center, ect.)</li>
-                    <li>You need a ride to/from the dorms.</li>
-                </ul>
-                <a class="btn-midstate btn-primary"
-                   asp-area=""
-                   asp-controller="Register"
-                   asp-action="SpecialRequest">
-                    Submit a Special Request
-                </a>
-            </section>
+            
 
         </div>
     </div>
@@ -181,20 +232,19 @@
                     <option value="2">Tuesday</option>
                     <option value="3">Wednesday</option>
                     <option value="4">Thursday</option>
-
+                    <option value="5">Friday</option>
                 </select>
             </div>
+  
+            <!-- RIDES CONTAINER -->
+            <div class="ridesContainer mt-2"></div>
 
             <!-- ADD RIDE BUTTON -->
             <div class="form-group mb-3">
-                <button type="button"
-                        class="btn-midstate btn-secondary addRideBtn">
-                    Add Ride +
+                <button type="button" class="btn-midstate btn-secondary addRideBtn w-100">
+                    <i class="bi bi-plus-square"></i> Add Ride
                 </button>
             </div>
-
-            <!-- RIDES CONTAINER -->
-            <div class="ridesContainer mt-2"></div>
 
         </div>
     </template>
@@ -303,11 +353,33 @@
         }
     </style>
 
+    <script>
+        // THIS COULD BE MOVED IN A SEPARATE FILE, BUT IS IS A ONE-OFF SCRIPT, THIS IS WHAT HIDES/SHOWS THE SPECIAL REQUEST NOTES
+        (function () {
+            var checkbox = document.getElementById('SpecialRequest');
+            var notesPanel = document.getElementById('specialRequestNotes');
+            var textarea = document.querySelector('#specialRequestNotes textarea');
+
+            function syncPanel() {
+                if (checkbox.checked) {
+                    notesPanel.style.display = '';
+                } else {
+                    notesPanel.style.display = 'none';
+                    textarea.value = '';
+                }
+            }
+
+            checkbox.addEventListener('change', syncPanel);
+            syncPanel(); 
+        })();
+    </script>
+
 
 
 <script src="/js/RouteSelector.js"></script>
 <script src="/js/helpicon.js"></script>
 <script src="/js/DayCards.js"></script>
+<script src="/js/TermDuration.js"></script>
 
 </body>
 

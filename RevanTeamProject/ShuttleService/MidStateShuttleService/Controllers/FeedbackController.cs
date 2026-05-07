@@ -6,6 +6,8 @@ using MidStateShuttleService.Services;
 
 namespace MidStateShuttleService.Controllers
 {
+    //IF YOU ARE READING THIS, FEEDBACK HAS BEEN REMOVED FROM THE SITE, IT WILL REMAIN HERE INCASE IT EVER GETS BROUGHT BACK        
+
     public class FeedbackController : Controller
     {
         private readonly ApplicationDbContext _context;

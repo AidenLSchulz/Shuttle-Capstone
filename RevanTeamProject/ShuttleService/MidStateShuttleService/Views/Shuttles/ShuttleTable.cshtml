@@ -81,13 +81,13 @@
                                     }
                                     else
                                     {
-                                        <a asp-controller="Shuttles"
-                                           asp-action="Delete"
-                                           asp-route-id="@shuttle.BusId"
-                                           class="btn-midstate btn-midstatehover">
-                                            <span class="btn-text">Archive</span>
-                                            <i class="bi bi-trash-fill btn-icon"></i>
-                                        </a>
+                                        <form asp-controller="Shuttles" asp-action="Delete" asp-route-id="@shuttle.BusId" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-midstate btn-midstatehover">
+                                                <span class="btn-text">Archive</span>
+                                                <i class="bi bi-trash-fill btn-icon"></i>
+                                            </button>
+                                        </form>
                                     }
                                 }
                             </div>

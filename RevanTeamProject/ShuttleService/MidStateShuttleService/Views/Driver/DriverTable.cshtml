@@ -1,14 +1,14 @@
 ﻿@model IEnumerable<MidStateShuttleService.Models.Driver>
 
 @{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Admin Dashboard";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
-<!-- If true use the inverted version to show a difference -->
+<!-- If viewing archived drivers, switch background style -->
 @if ((bool?)ViewData["Archives"] == true)
 {
     <style>
@@ -21,36 +21,44 @@
 <div class="form-container tiled-background-2">
     <div class="form-paper">
 
+        <!-- Header with title and add button -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h2>Drivers</h2>
                 <p class="mb-0">Manage shuttle drivers.</p>
             </div>
 
+            <!-- Navigate to create driver page -->
             <a asp-controller="Driver" asp-action="Create" class="btn btn-midstate">
                 <i class="bi bi-plus-circle-fill me-1"></i> Add Driver
             </a>
         </div>
 
+        <!-- Container for driver cards -->
         <div id="driverTableBody">
 
             @if (Model == null || !Model.Any())
             {
+                <!-- Displayed when no drivers exist -->
                 <div class="form-paper p-3">
                     <p>There are currently no drivers.</p>
                 </div>
             }
             else
             {
+                // Orders drivers alphabetically by name
                 @foreach (var d in Model.OrderBy(d => d.Name))
                 {
                     <div class="form-paper mb-4 p-4 position-relative driver-card">
 
+                        <!-- Responsive layout for driver card -->
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
 
                             <div>
+                                <!-- Driver name -->
                                 <h4 class="mb-1">@d.Name</h4>
 
+                                <!-- Driver contact info -->
                                 <div class="mb-1">
                                     <strong>Phone:</strong> @d.PhoneNumber
                                 </div>
@@ -59,9 +67,11 @@
                                 </div>
                             </div>
 
+                            <!-- Action buttons -->
                             <div class="action-panel d-flex flex-column gap-2 align-items-start align-items-md-end">
                                 @if (User.IsInRole("Admin"))
                                 {
+                                    <!-- Edit driver -->
                                     <a asp-controller="Driver"
                                        asp-action="Edit"
                                        asp-route-id="@d.DriverId"
@@ -72,6 +82,7 @@
 
                                     @if ((bool?)ViewData["Archives"] == true)
                                     {
+                                        <!-- Restore archived driver -->
                                         <form asp-action="Unarchive" method="post">
                                             <input type="hidden" name="id" value="@d.DriverId" />
                                             <button class="btn-midstate btn-midstatehover" type="submit">
@@ -82,6 +93,7 @@
                                     }
                                     else
                                     {
+                                        <!-- Archive driver -->
                                         <form asp-controller="Driver"
                                               asp-action="Delete"
                                               method="post">
@@ -106,11 +118,13 @@
 
         </div>
 
+        <!-- Pagination controls populated by JS -->
         <div id="pagination-controls-driver" class="pagination"></div>
 
     </div>
 </div>
 
+<!-- JS for pagination, table behavior, and filtering -->
 <script src="~/js/tablePagination.js"></script>
 <script src="/js/Dashboard/Table.js"></script>
 <script src="/js/SearchFunc/RouteSearch.js"></script>

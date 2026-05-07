@@ -1,12 +1,14 @@
 ﻿@model MidStateShuttleService.Models.MailItem
 
 @{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "Mail Tracking";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
+<!-- Styles for form layout -->
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
@@ -15,21 +17,26 @@
     <div class="form-paper">
 
         <section class="form-section">
+
+            <!-- Page title -->
             <h2>Mail Tracking</h2>
 
-            <!-- SHOW MODEL ERRORS -->
+            <!-- Displays all model validation errors -->
             <div asp-validation-summary="All" class="text-danger"></div>
 
             @if (TempData["SuccessMessage"] != null)
             {
+                <!-- Success message shown after submission -->
                 <div class="alert alert-success">
                     @TempData["SuccessMessage"]
                 </div>
             }
 
+            <!-- Form posts to Create action -->
             <form asp-action="Create" method="post">
                 @Html.AntiForgeryToken()
 
+                <!-- Driver name input -->
                 <div class="form-group">
                     <label asp-for="DriverName">Driver Name</label>
                     <input asp-for="DriverName"
@@ -38,53 +45,72 @@
                     <span asp-validation-for="DriverName" class="text-danger"></span>
                 </div>
 
+                <!-- Pickup and drop-off locations -->
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label asp-for="PickupLocation">Pick-Up Location</label>
+
+                        <!-- Dropdown populated from ViewBag.Locations -->
                         <select asp-for="PickupLocation"
                                 asp-items="ViewBag.Locations"
                                 class="form-control midstate-textinput">
                             <option value="">Select pickup location</option>
                         </select>
+
                         <span asp-validation-for="PickupLocation" class="text-danger"></span>
                     </div>
 
                     <div class="form-group col-md-6">
                         <label asp-for="DropoffLocation">Drop-Off Location</label>
+
+                        <!-- Uses same location list -->
                         <select asp-for="DropoffLocation"
                                 asp-items="ViewBag.Locations"
                                 class="form-control midstate-textinput">
                             <option value="">Select drop-off location</option>
                         </select>
+
                         <span asp-validation-for="DropoffLocation" class="text-danger"></span>
                     </div>
                 </div>
 
+                <!-- Mail type selection -->
                 <div class="form-group">
                     <label asp-for="MailType">Mail Type</label>
+
+                    <!-- Enum-based dropdown -->
                     <select asp-for="MailType"
                             asp-items="Html.GetEnumSelectList<MailType>()"
                             class="form-control midstate-textinput">
                         <option value="">Select mail type</option>
                     </select>
+
                     <span asp-validation-for="MailType" class="text-danger"></span>
                 </div>
 
+                <!-- Notes input -->
                 <div class="form-group">
                     <label asp-for="Notes">Notes</label>
+
+                    <!-- Optional additional details -->
                     <textarea asp-for="Notes"
                               class="form-control midstate-textinput"
                               rows="4"
                               maxlength="500"
                               placeholder="Add any helpful notes"></textarea>
+
                     <span asp-validation-for="Notes" class="text-danger"></span>
                 </div>
 
+                <!-- Form buttons -->
                 <div class="form-group submit-group">
+
+                    <!-- Submit mail entry -->
                     <button type="submit" class="btn-midstate btn-primary">
                         Submit Mail Entry
                     </button>
 
+                    <!-- Cancel and return to dashboard -->
                     <a asp-controller="Dashboard"
                        asp-action="Index"
                        class="btn-midstate btn-secondary">
@@ -92,11 +118,13 @@
                     </a>
                 </div>
             </form>
+
         </section>
 
     </div>
 </div>
 
 @section Scripts {
+    <!-- Enables client-side validation -->
     <partial name="_ValidationScriptsPartial" />
 }

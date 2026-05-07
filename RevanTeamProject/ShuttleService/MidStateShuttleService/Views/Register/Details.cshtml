@@ -60,6 +60,25 @@
             </span>
         </div>
 
+        <!-- SPECIAL REQUEST CHECKBOX -->
+        <div class="form-group terms-group">
+            <div class="checkbox-midstate">
+                <input asp-for="isCustom" type="checkbox" id="SpecialRequest" value="true" />
+                <label for="SpecialRequest">
+                    This request has additional details.
+                </label>
+            </div>
+        </div>
+
+        <!-- SPECIAL REQUEST NOTES -->
+        <div class="form-group" id="specialRequestNotes">
+            @Html.LabelFor(m => m.customMessage, "Ride Details")
+            <span class="help-icon" data-help="Please fill out details about your request here.">?</span>
+            @Html.TextAreaFor(m => m.customMessage,
+                        5, 50,
+                        new { @class = "midstate-textinput", placeholder = "Enter additional details..." })
+        </div>
+
         <!-- DAY CARDS -->
         <div id="dayCardsContainer">
 
@@ -294,6 +313,22 @@
 
                 <input asp-for="IsAdult" type="checkbox" />
                 <label asp-for="IsAdult"></label>
+
+            </div>
+
+            <!-- Field Trip -->
+            <div class="form-group">
+
+                <input asp-for="IsFieldTrip" type="checkbox" />
+                <label asp-for="IsFieldTrip"></label>
+
+            </div>
+
+            <!-- Is interal inquiry -->
+            <div class="form-group">
+
+                <input asp-for="IsInternalInquiry" type="checkbox" />
+                <label asp-for="IsInternalInquiry"></label>
 
             </div>
 

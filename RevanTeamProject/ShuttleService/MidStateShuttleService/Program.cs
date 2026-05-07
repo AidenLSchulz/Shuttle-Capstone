@@ -13,7 +13,7 @@ using MidStateShuttleService.Services;
 
 namespace MidStateShuttleService
 {
-    public class Program
+    public partial class Program
     {
         public static async Task Main(string[] args)
         {
@@ -24,8 +24,6 @@ namespace MidStateShuttleService
             //var appConnectionString = builder.Configuration.GetConnectionString("Connection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(appConnectionString));
-
-            builder.Services.AddSingleton<IListService, ListServices>();
 
             builder.Services.AddScoped<EmailServices>();
 

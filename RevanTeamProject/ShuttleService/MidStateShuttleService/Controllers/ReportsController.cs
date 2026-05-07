@@ -43,10 +43,19 @@ namespace MidStateShuttleService.Controllers
 
                 // DEV NOTE:
                 // Load rider request records newest first for the Requests report.
-                allModels.Register = await _context.RegisterModels
+                var requestRoutes = await _context.RegisterModels
                     .AsNoTracking()
-                    .OrderByDescending(registerModel => registerModel.InsertDateTime)
+                    .Include(registration => registration.DaySchedules)
+                        .ThenInclude(requestDay => requestDay.Rides)
+                            .ThenInclude(ride => ride.PickUpLocation)
+                    .Include(registration => registration.DaySchedules)
+                        .ThenInclude(requestDay => requestDay.Rides)
+                            .ThenInclude(ride => ride.DropOffLocation)
+                    .OrderByDescending(registration => registration.InsertDateTime)
                     .ToListAsync();
+
+                ViewBag.RequestRoutes = requestRoutes;
+                allModels.Register = new List<RegisterModel>(); // keep model valid
 
                 // DEV NOTE:
                 // Passed to the view so it knows which report table to render.
@@ -115,57 +124,111 @@ namespace MidStateShuttleService.Controllers
         {
             _logger.LogInformation("ExportRiderRequestsCsv called.");
 
-            // DEV NOTE:
-            // Pull only the fields needed for CSV export.
-            var riderRequests = await _context.RegisterModels
+            var registrations = await _context.RegisterModels
                 .AsNoTracking()
-                .OrderByDescending(registerModel => registerModel.InsertDateTime)
-                .Select(registerModel => new
-                {
-                    registerModel.RegistrationId,
-                    registerModel.Name,
-                    registerModel.StudentId,
-                    registerModel.Email,
-                    registerModel.Phone,
-                    registerModel.IsAdult,
-                    registerModel.isCustom,
-                    registerModel.IsFieldTrip,
-                    registerModel.IsInternalInquiry,
-                    registerModel.InsertDateTime,
-                    registerModel.IsArchived
-                })
+                .Include(registration => registration.DaySchedules)
+                    .ThenInclude(requestDay => requestDay.Rides)
+                        .ThenInclude(ride => ride.PickUpLocation)
+                .Include(registration => registration.DaySchedules)
+                    .ThenInclude(requestDay => requestDay.Rides)
+                        .ThenInclude(ride => ride.DropOffLocation)
+                .OrderByDescending(registration => registration.InsertDateTime)
                 .ToListAsync();
 
-            _logger.LogInformation("Loaded {Count} rider request records for CSV export.", riderRequests.Count);
+            _logger.LogInformation("Loaded {Count} rider request records for CSV export.", registrations.Count);
 
-            // DEV NOTE:
-            // Build CSV content manually with a StringBuilder.
             var stringBuilder = new System.Text.StringBuilder();
-            stringBuilder.AppendLine("RegistrationId,Name,StudentId,Email,Phone,IsAdult,RequestType,IsFieldTrip,IsInternalInquiry,InsertDateTime,IsArchived");
 
-            foreach (var riderRequest in riderRequests)
+            stringBuilder.AppendLine("RegistrationId,RideId,RouteId,Name,StudentId,Email,Phone,IsAdult,RequestType,IsFieldTrip,IsInternalInquiry,DayOfWeek,PickUpLocation,DropOffLocation,DropOffTime,InsertDateTime,IsArchived,AdditionalDetails");
+
+            foreach (var registration in registrations)
             {
-                // DEV NOTE:
-                // Csv(...) safely escapes text values that may contain commas, quotes, or line breaks.
-                stringBuilder.AppendLine(
-                    $"{riderRequest.RegistrationId}," +
-                    $"{Csv(riderRequest.Name)}," +
-                    $"{CsvExcelText(riderRequest.StudentId)}," +
-                    $"{CsvExcelText(riderRequest.Email)}," +
-                    $"{CsvExcelText(riderRequest.Phone)}," +
-                    $"{BoolToYesNo(riderRequest.IsAdult)}," +
-                    $"{Csv(riderRequest.isCustom ? "Special" : "Regular")}," +
-                    $"{BoolToYesNo(riderRequest.IsFieldTrip)}," +
-                    $"{BoolToYesNo(riderRequest.IsInternalInquiry)}," +
-                    $"{DateTimeHelper.ToCentralTimeString(riderRequest.InsertDateTime)}," +
-                    $"{BoolToYesNo(riderRequest.IsArchived)}"
-                );
+                var requestDays = registration.DaySchedules ?? new List<RequestDay>();
+
+                if (requestDays.Any())
+                {
+                    foreach (var requestDay in requestDays)
+                    {
+                        var rides = requestDay.Rides ?? new List<Ride>();
+
+                        if (rides.Any())
+                        {
+                            foreach (var ride in rides)
+                            {
+                                stringBuilder.AppendLine(
+                                    $"{registration.RegistrationId}," +
+                                    $"{ride.RideId}," +
+                                    $"{ride.RouteId}," +
+                                    $"{Csv(registration.Name)}," +
+                                    $"{CsvExcelText(registration.StudentId)}," +
+                                    $"{CsvExcelText(registration.Email)}," +
+                                    $"{CsvExcelText(registration.Phone)}," +
+                                    $"{BoolToYesNo(registration.IsAdult)}," +
+                                    $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                                    $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                                    $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                                    $"{Csv(requestDay.WeekDay.ToString())}," +
+                                    $"{Csv(ride.PickUpLocation?.Name)}," +
+                                    $"{Csv(ride.DropOffLocation?.Name)}," +
+                                    $"{Csv(ride.DropOffTime?.ToString("h\\:mm"))}," +
+                                    $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                                    $"{BoolToYesNo(registration.IsArchived)}," +
+                                    $"{Csv(registration.customMessage)}"
+                                );
+                            }
+                        }
+                        else
+                        {
+                            stringBuilder.AppendLine(
+                                $"{registration.RegistrationId}," +
+                                $"," +
+                                $"," +
+                                $"{Csv(registration.Name)}," +
+                                $"{CsvExcelText(registration.StudentId)}," +
+                                $"{CsvExcelText(registration.Email)}," +
+                                $"{CsvExcelText(registration.Phone)}," +
+                                $"{BoolToYesNo(registration.IsAdult)}," +
+                                $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                                $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                                $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                                $"{Csv(requestDay.WeekDay.ToString())}," +
+                                $"," +
+                                $"," +
+                                $"," +
+                                $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                                $"{BoolToYesNo(registration.IsArchived)}," +
+                                $"{Csv(registration.customMessage)}"
+                            );
+                        }
+                    }
+                }
+                else
+                {
+                    stringBuilder.AppendLine(
+                        $"{registration.RegistrationId}," +
+                        $"," +
+                        $"," +
+                        $"{Csv(registration.Name)}," +
+                        $"{CsvExcelText(registration.StudentId)}," +
+                        $"{CsvExcelText(registration.Email)}," +
+                        $"{CsvExcelText(registration.Phone)}," +
+                        $"{BoolToYesNo(registration.IsAdult)}," +
+                        $"{Csv(registration.isCustom ? "Special" : "Regular")}," +
+                        $"{BoolToYesNo(registration.IsFieldTrip)}," +
+                        $"{BoolToYesNo(registration.IsInternalInquiry)}," +
+                        $"," +
+                        $"," +
+                        $"," +
+                        $"," +
+                        $"{DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)}," +
+                        $"{BoolToYesNo(registration.IsArchived)}," +
+                        $"{Csv(registration.customMessage)}"
+                    );
+                }
             }
 
             _logger.LogInformation("Rider requests CSV built successfully.");
 
-            // DEV NOTE:
-            // Return the CSV as a downloadable file.
             return File(
                 System.Text.Encoding.UTF8.GetBytes(stringBuilder.ToString()),
                 "text/csv",

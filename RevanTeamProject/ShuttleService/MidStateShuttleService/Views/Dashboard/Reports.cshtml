@@ -3,11 +3,11 @@
 @using MidStateShuttleService.Models
 
 @{
+    // Sets page title and layout
     ViewData["Title"] = "Reports";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 
-    // DEV NOTE:
-    // Controller sets ViewBag.ReportType
+    // Determines which report is selected (requests, checkins, or mail)
     var reportType = (ViewBag.ReportType as string) ?? "";
 
     var isRequests = reportType.Equals("requests", StringComparison.OrdinalIgnoreCase);
@@ -16,11 +16,12 @@
 
     // DEV NOTE:
     // Always convert collections to lists to avoid null issues
-    var requestRows = (Model.Register ?? Enumerable.Empty<RegisterModel>()).ToList();
+    var requestRows = ((IEnumerable<RegisterModel>?)ViewBag.RequestRoutes ?? Enumerable.Empty<RegisterModel>()).ToList();
     var checkinRows = (Model.CheckIn ?? Enumerable.Empty<CheckIn>()).ToList();
     var mailRows = (Model.MailItems ?? Enumerable.Empty<MailItem>()).ToList();
 }
 
+<!-- Styles for dashboard and reports -->
 <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/Reports..css" asp-append-version="true" />
 
@@ -33,6 +34,7 @@
             <div class="reportsHint">Run admin reports and export CSV files.</div>
         </div>
 
+        <!-- Navigation back to dashboard -->
         <a class="rptBtn rptBtnGhost"
            href="@Url.Action("Index", "Dashboard")">
             ← Back to Dashboard
@@ -51,7 +53,7 @@
         <div class="reportCardBody">
             <div class="reportPickerGrid">
 
-                <!-- REQUESTS -->
+                <!-- REQUESTS OPTION -->
                 <div class="reportOption @(isRequests ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -63,6 +65,7 @@
                         </div>
                     </div>
 
+                    <!-- Run and Export actions -->
                     <div class="reportOptionActions">
                         <a class="rptBtn"
                            href="@Url.Action("Reports", "Reports", new { report = "requests" })">
@@ -76,7 +79,7 @@
                     </div>
                 </div>
 
-                <!-- CHECKINS -->
+                <!-- CHECKINS OPTION -->
                 <div class="reportOption @(isCheckins ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -101,7 +104,7 @@
                     </div>
                 </div>
 
-                <!-- MAIL -->
+                <!-- MAIL OPTION -->
                 <div class="reportOption @(isMail ? "reportOptionActive" : "")">
                     <div class="reportOptionTop">
                         <div class="reportOptionText">
@@ -132,21 +135,26 @@
 
     @if (isRequests)
     {
+        <!-- REQUEST RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <div class="reportStickyLeft">
                     <h3>Rider Requests</h3>
                 </div>
                 <div class="reportStickyRight">
+                    <!-- Displays total row count -->
                     <span class="pill">Rows: @requestRows.Count</span>
                 </div>
             </div>
 
+            <!-- Scrollable table -->
             <div class="reportScrollArea">
                 <table class="reportsTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Registration ID</th>
+                            <th>Ride ID</th>
+                            <th>Route ID</th>
                             <th>Name</th>
                             <th>StudentId</th>
                             <th>Email</th>
@@ -155,26 +163,100 @@
                             <th>Type</th>
                             <th>Field Trip</th>
                             <th>Internal</th>
+                            <th>Day</th>
+                            <th>Pickup</th>
+                            <th>Dropoff</th>
+                            <th>Dropoff Time</th>
                             <th>Date</th>
                             <th>Archived</th>
+                            <th>Additional Details</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var request in requestRows)
+                        @foreach (var registration in requestRows)
                         {
-                            <tr>
-                                <td>@request.RegistrationId</td>
-                                <td>@request.Name</td>
-                                <td>@request.StudentId</td>
-                                <td>@request.Email</td>
-                                <td>@request.Phone</td>
-                                <td>@(request.IsAdult ? "Yes" : "No")</td>
-                                <td>@(request.isCustom ? "Special" : "Regular")</td>
-                                <td>@(request.IsFieldTrip ? "Yes" : "No")</td>
-                                <td>@(request.IsInternalInquiry ? "Yes" : "No")</td>
-                                <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(request.InsertDateTime)</td>
-                                <td>@(request.IsArchived ? "Yes" : "No")</td>
-                            </tr>
+                            var requestDays = registration.DaySchedules ?? new List<RequestDay>();
+
+                            if (requestDays.Any())
+                            {
+                                foreach (var requestDay in requestDays)
+                                {
+                                    var rides = requestDay.Rides ?? new List<Ride>();
+
+                                    if (rides.Any())
+                                    {
+                                        foreach (var ride in rides)
+                                        {
+                                            <tr>
+                                                <td>@registration.RegistrationId</td>
+                                                <td>@ride.RideId</td>
+                                                <td>@ride.RouteId</td>
+                                                <td>@registration.Name</td>
+                                                <td>@registration.StudentId</td>
+                                                <td>@registration.Email</td>
+                                                <td>@registration.Phone</td>
+                                                <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                                <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                                <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                                <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                                <td>@requestDay.WeekDay</td>
+                                                <td>@ride.PickUpLocation?.Name</td>
+                                                <td>@ride.DropOffLocation?.Name</td>
+                                                <td>@ride.DropOffTime?.ToString("h\\:mm")</td>
+                                                <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                                <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                                <td>@registration.customMessage</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>@registration.RegistrationId</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td>@registration.Name</td>
+                                            <td>@registration.StudentId</td>
+                                            <td>@registration.Email</td>
+                                            <td>@registration.Phone</td>
+                                            <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                            <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                            <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                            <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                            <td>@requestDay.WeekDay</td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                            <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                            <td>@registration.customMessage</td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td>@registration.RegistrationId</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>@registration.Name</td>
+                                    <td>@registration.StudentId</td>
+                                    <td>@registration.Email</td>
+                                    <td>@registration.Phone</td>
+                                    <td>@(registration.IsAdult ? "Yes" : "No")</td>
+                                    <td>@(registration.isCustom ? "Special" : "Regular")</td>
+                                    <td>@(registration.IsFieldTrip ? "Yes" : "No")</td>
+                                    <td>@(registration.IsInternalInquiry ? "Yes" : "No")</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>@MidStateShuttleService.Helpers.DateTimeHelper.ToCentralTimeString(registration.InsertDateTime)</td>
+                                    <td>@(registration.IsArchived ? "Yes" : "No")</td>
+                                    <td>@registration.customMessage</td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </table>
@@ -184,6 +266,7 @@
 
     else if (isCheckins)
     {
+        <!-- CHECKIN RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <h3>Check-ins</h3>
@@ -225,8 +308,7 @@
 
     else if (isMail)
     {
-        <!-- DEV NOTE:
-             Updated to match NEW MailItem model (DriverName, no Sender/Recipient/Tracking) -->
+        <!-- MAIL RESULTS -->
         <div class="reportCard reportResultsBlock">
             <div class="reportStickyBar">
                 <h3>Mail Check-Ins</h3>

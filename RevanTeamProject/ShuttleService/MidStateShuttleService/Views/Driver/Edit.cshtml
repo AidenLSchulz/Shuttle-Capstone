@@ -1,45 +1,62 @@
 ﻿@model MidStateShuttleService.Models.Driver
 
-<!-- Include Bootstrap CSS -->
+<!-- Bootstrap and custom styles -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/Routes.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
 
-<!-- Include jQuery and Bootstrap JS -->
+<!-- jQuery and Bootstrap JS for modal + interactions -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <body>
     <div>
+        <!-- Wrapper for centering form -->
         <div class="wrapper wrapper--w680 mt-5">
             <div class="form form-1">
                 <div class="form-body">
+
+                    <!-- Page title -->
                     <h2 class="title">Edit Driver</h2>
+
+                    <!-- Form posts to Edit action -->
                     <form asp-action="Edit" method="post">
                         @Html.AntiForgeryToken()
-                        <div>
-                            <input type="hidden" asp-for="DriverId" /> <!-- Include hidden field for driver ID -->
 
+                        <div>
+                            <!-- Hidden field ensures correct driver is updated -->
+                            <input type="hidden" asp-for="DriverId" />
+
+                            <!-- Name input -->
                             <div class="input-fields">
                                 <input asp-for="Name" type="text" class="input--style-1" placeholder="Name" required />
                                 <div class="div-line"></div>
+                                <!-- Validation message -->
                                 <div id="Name-validation-message" class="validation-message">Please enter a valid name.</div>
                             </div>
 
+                            <!-- Phone input -->
                             <div class="input-fields">
                                 <input asp-for="PhoneNumber" type="text" class="input--style-1" placeholder="Phone Number" required />
                                 <div class="div-line"></div>
+                                <!-- Validation message -->
                                 <div id="PhoneNumb-validation-message" class="validation-message">Please enter a valid phone number.</div>
                             </div>
 
+                            <!-- Email input -->
                             <div class="input-fields">
                                 <input asp-for="Email" type="email" class="input--style-1" placeholder="Email" required />
                                 <div class="div-line"></div>
+                                <!-- Validation message -->
                                 <div id="Email-validation-message" class="validation-message">Please enter a valid email address.</div>
                             </div>
 
+                            <!-- Form buttons -->
                             <div class="p-t-20">
+                                <!-- Submit updated driver -->
                                 <button class="btn btn--radius btn--submit" type="submit">Submit</button>
+
+                                <!-- Cancel and return to driver list -->
                                 <button type="button" class="btn btn-primary"
                                         onclick="location.href='@Url.Action("ViewAll", "Driver")'">
                                     Cancel
@@ -47,25 +64,33 @@
                             </div>
                         </div>
                     </form>
+
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Success Modal -->
+    <!-- Displays after successful edit -->
     <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
+                    <!-- Modal title -->
                     <h5 class="modal-title" id="successModalLabel">Edit Successful</h5>
+
+                    <!-- Close button -->
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+
                 <div class="modal-body">
                     Driver edited successfully!
                 </div>
+
                 <div class="modal-footer">
+                    <!-- Return to driver list -->
                     <button type="button" class="btn btn-primary"
                             onclick="location.href='@Url.Action("ViewAll", "Driver")'">
                         Return
@@ -77,12 +102,16 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            // Reads success flag from TempData
             var driverSuccess = '@TempData["DriverSuccess"]';
+
+            // Shows modal if edit was successful
             if (driverSuccess === 'True') {
                 $('#successModal').modal('show');
             }
         });
     </script>
 
+    <!-- JS for driver validation/behavior -->
     <script src="~/js/driver.js"></script>
 </body>

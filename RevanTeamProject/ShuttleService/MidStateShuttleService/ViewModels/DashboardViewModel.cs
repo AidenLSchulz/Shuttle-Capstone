@@ -10,6 +10,8 @@ namespace MidStateShuttleService.ViewModels
 
         public int TotalRequests { get; set; }
 
+        public int PastDayMail {  get; set; }
+
         public List<Message> Messages { get; set; }
 
         public List<Notification> Notifications { get; set; }

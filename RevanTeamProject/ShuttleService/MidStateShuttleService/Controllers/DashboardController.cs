@@ -44,9 +44,12 @@ namespace MidStateShuttleService.Controllers
 
             NotificationService note = new NotificationService(_context);
 
+            MailServices mserv = new MailServices(_context);
+
             dashboardViewModel.TotalMonthlyCheckins = cis.GetAllEntities().Where(c => c.Date >= DateTime.Today.AddDays(-30)).Count();
             dashboardViewModel.PastWeekRegistrations = reg.GetRegistrationCount("week");
             dashboardViewModel.TotalRequests = reg.GetAllEntities().Where(r => !r.IsArchived).Count();
+            dashboardViewModel.PastDayMail = mserv.GetAllMailItems().Where(m => m.IsActive && m.SubmittedAt >= DateTime.Today).Count();
 
             if (User.IsInRole("Admin"))
             {

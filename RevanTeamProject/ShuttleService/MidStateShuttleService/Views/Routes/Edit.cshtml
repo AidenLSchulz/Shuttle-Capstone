@@ -1,25 +1,35 @@
 ﻿@using MidStateShuttleService.Enums
 @{
     ViewData["Title"] = "Edit Route";
+    <!-- Sets the page title shown in the layout/tab -->
 }
 
-@inject MidStateShuttleService.Service.IListService ListServices
 @model MidStateShuttleService.Models.Routes
+<!-- Strongly typed model used to populate and update an existing route -->
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="/css/routes.css" />
 <link rel="stylesheet" href="/css/Modal.css" />
+<!-- jQuery handles modal behavior -->
+<!-- Bootstrap provides layout and modal styling -->
+<!-- Custom CSS controls route form styling -->
 
 <body>
     <div class="wrapper wrapper--w680 mt-5">
         <div class="form form-1">
             <div class="form-body">
                 <h2 class="title">Edit Route</h2>
+
+                <!-- Route edit form — posts to RoutesController.Edit with the current RouteID -->
                 <form asp-action="Edit" method="post">
+                    <!-- Submits updated route data to Edit action in controller -->
 
+                    <!-- Hidden field preserves the RouteID across the POST for the ID mismatch guard in the controller -->
                     <input type="hidden" asp-for="RouteID" />
+                    <!-- Hidden field ensures the correct route is updated -->
 
+                    <!-- Day of Week — populated from the WeekDay enum, pre-selected with the existing value -->
                     <div class="input-fields">
                         <label>Day of Week</label>
                         <select asp-for="DayOfWeek"
@@ -28,12 +38,17 @@
                                 required>
                             <option value="">--Select Day--</option>
                         </select>
+                        <!-- Dropdown populated from WeekDay enum -->
+
                         <div class="div-line"></div>
+
                         <div id="DayOfWeek-validation-message" class="validation-message">
                             Please select a day of the week.
                         </div>
+                        <!-- Custom validation message for missing selection -->
                     </div>
 
+                    <!-- Pick Up Location — populated from ViewBag.Locations by LoadRouteDropdowns(), pre-selected with the existing value -->
                     <div class="input-fields">
                         <label>Pick Up Location</label>
                         <select asp-for="PickUpLocationID"
@@ -41,10 +56,16 @@
                                 class="form-control input--style-1" required>
                             <option selected="selected" value="" required>--Select--</option>
                         </select>
+                        <!-- Locations provided from controller via ViewBag -->
+
                         <div class="div-line"></div>
-                        <div id="PickUpLocationID-validation-message" class="validation-message">Please select a pick-up location.</div>
+
+                        <div id="PickUpLocationID-validation-message" class="validation-message">
+                            Please select a pick-up location.
+                        </div>
                     </div>
 
+                    <!-- Drop Off Location — populated from the same ViewBag.Locations list, pre-selected with the existing value -->
                     <div class="input-fields">
                         <label>Drop Off Location</label>
                         <select asp-for="DropOffLocationID"
@@ -52,37 +73,66 @@
                                 class="form-control input--style-1" required>
                             <option selected="selected" value="" required>--Select--</option>
                         </select>
+                        <!-- Uses same location list as pickup -->
+
                         <div class="div-line"></div>
-                        <div id="DropOffLocationID-validation-message" class="validation-message">Please select a drop-off location.</div>
+
+                        <div id="DropOffLocationID-validation-message" class="validation-message">
+                            Please select a drop-off location.
+                        </div>
                     </div>
 
+                    <!-- Pick Up Time — stored as TimeSpan on the model, pre-populated with the existing value -->
                     <div class="input-fields">
                         <label>Pick Up Time</label>
                         <input asp-for="PickUpTime" type="time" class="form-control input--style-1" required />
+                        <!-- Time input bound to existing PickUpTime -->
+
                         <div class="div-line"></div>
-                        <div id="PickUpTime-validation-message" class="validation-message">Please enter a valid pick-up time.</div>
+
+                        <div id="PickUpTime-validation-message" class="validation-message">
+                            Please enter a valid pick-up time.
+                        </div>
                     </div>
 
+                    <!-- Drop Off Time — stored as TimeSpan on the model, pre-populated with the existing value -->
                     <div class="input-fields">
                         <label>Drop Off Time</label>
                         <input asp-for="DropOffTime" type="time" class="form-control input--style-1" required />
+                        <!-- Time input bound to existing DropOffTime -->
+
                         <div class="div-line"></div>
-                        <div id="DropOffTime-validation-message" class="validation-message">Please enter a valid drop-off time.</div>
+
+                        <div id="DropOffTime-validation-message" class="validation-message">
+                            Please enter a valid drop-off time.
+                        </div>
                     </div>
 
+                    <!-- Additional Details — optional free-text field for route notes -->
                     <div class="input-fields">
                         <label>Additional Details</label>
-                        <textarea asp-for="AdditionalDetails" class="form-control input--style-1" placeholder="Enter additional details"></textarea>
+                        <textarea asp-for="AdditionalDetails"
+                                  class="form-control input--style-1"
+                                  placeholder="Enter additional details"></textarea>
+                        <!-- Optional field for extra route information -->
+
                         <div class="div-line"></div>
-                        <div id="AdditionalDetails-validation-message" class="validation-message">Please enter valid additional details.</div>
+
+                        <div id="AdditionalDetails-validation-message" class="validation-message">
+                            Please enter valid additional details.
+                        </div>
                     </div>
 
+                    <!-- Form actions — Return navigates to the full route list without saving -->
                     <div class="p-t-20">
                         <button type="submit" class="btn btn--radius btn--submit">Save</button>
+                        <!-- Submits updated route -->
+
                         <button type="button" class="btn btn-primary"
                                 onclick="location.href='@Url.Action("ViewAll", "Routes")'">
                             Return
                         </button>
+                        <!-- Navigates back to route list without saving -->
                     </div>
 
                 </form>
@@ -90,24 +140,30 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
+    <!-- Success modal — shown automatically when TempData["RouteSuccess"] is set after a successful update -->
     <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="successModalLabel">Edit Successful</h5>
+                    <!-- Dismiss button closes the modal and returns focus to the edit form -->
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+
                 <div class="modal-body">
                     Route updated successfully!
                 </div>
+
                 <div class="modal-footer">
+                    <!-- Return navigates to the full route list -->
                     <button type="button" class="btn btn-primary"
                             onclick="location.href='@Url.Action("ViewAll", "Routes")'">
                         Return
                     </button>
+                    <!-- Redirects to route list after edit -->
                 </div>
             </div>
         </div>
@@ -115,6 +171,8 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            // Check TempData flag set by the controller on successful update and trigger the success modal.
+            // TempData is consumed after this read so the modal will not re-appear on page refresh.
             var routeSuccess = '@TempData["RouteSuccess"]';
             if (routeSuccess === 'True') {
                 $('#successModal').modal('show');
@@ -123,5 +181,5 @@
     </script>
 
     <script src="~/js/Routes.js"></script>
+    <!-- External JS for route-related behavior -->
 </body>
-</html>

@@ -34,9 +34,6 @@ namespace MidStateShuttleService.Migrations
                     b.Property<int>("BusNo")
                         .HasColumnType("int");
 
-                    b.Property<int>("DriverId")
-                        .HasColumnType("int");
-
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -46,8 +43,6 @@ namespace MidStateShuttleService.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("BusId");
-
-                    b.HasIndex("DriverId");
 
                     b.ToTable("Bus", (string)null);
                 });
@@ -522,6 +517,9 @@ namespace MidStateShuttleService.Migrations
                         .HasAnnotation("RegularExpression", "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")
                         .HasAnnotation("SqlDbType", SqlDbType.Time);
 
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -636,17 +634,6 @@ namespace MidStateShuttleService.Migrations
                     b.HasIndex("RouteId");
 
                     b.ToTable("Ride");
-                });
-
-            modelBuilder.Entity("MidStateShuttleService.Models.Bus", b =>
-                {
-                    b.HasOne("MidStateShuttleService.Models.Driver", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
                 });
 
             modelBuilder.Entity("MidStateShuttleService.Models.CheckIn", b =>

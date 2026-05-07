@@ -1,13 +1,13 @@
 @model MidStateShuttleService.Models.Message
 
+<!-- Styles specific to communication and form layout -->
 <link rel="stylesheet" href="../css/Communication/Communicate.css" />
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 <link rel="stylesheet" href="/css/HelpIcon.css" />
 
-<!-- Include jQuery and Bootstrap JS -->
+<!-- jQuery and Bootstrap for modal + UI interactions -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <body>
@@ -15,6 +15,7 @@
         <div class="form-paper">
 
             <section class="form-section">
+                <!-- Page title -->
                 <h2>Send Message</h2>
 
                 <!-- Emergency Toggle -->
@@ -22,6 +23,7 @@
                     <fieldset>
                         <legend>Is this message an emergency?</legend>
 
+                        <!-- Yes option triggers emergency display -->
                         <div class="radiobtn-midstate">
                             <input type="radio"
                                    name="EmergencyToggle"
@@ -31,6 +33,7 @@
                             <label for="formToggle">Yes</label>
                         </div>
 
+                        <!-- No option shows normal form -->
                         <div class="radiobtn-midstate">
                             <input type="radio"
                                    name="EmergencyToggle"
@@ -43,6 +46,7 @@
                 </div>
 
                 <!-- Emergency Contact -->
+                <!-- Displayed when emergency is selected -->
                 <div id="emergencyContact"
                      class="form-section"
                      style="display:none;"
@@ -54,21 +58,24 @@
 
                     <p>For an emergency response, please call or text:</p>
 
+                    <!-- Clickable phone number -->
                     <a href="tel:1234567890" id="emergencyPhone">
                         715-581-9284
                     </a>
                 </div>  
 
                 <!-- Form Container -->
+                <!-- Hidden until "No" is selected -->
                 <div id="formContainer" style="display:none;">
 
+                    <!-- Main form submission -->
                     <form id="CommunicateForm"
                           method="post"
                           asp-action="StudentCommunicate">
 
                         @Html.AntiForgeryToken()
 
-                        <!-- Name -->
+                        <!-- Name input -->
                         <div class="form-group">
                             <label asp-for="name">Name</label>
                             <input asp-for="name"
@@ -78,7 +85,7 @@
                             <div id="name-Validation-Message" class="text-danger"></div>
                         </div>
 
-                        <!-- Message -->
+                        <!-- Message input -->
                         <div class="form-group">
                             <label asp-for="message">Message</label>
                             <textarea asp-for="message"
@@ -94,10 +101,12 @@
                             <fieldset>
                                 <legend>Would you like to receive a response?</legend>
 
+                                <!-- Instructional note -->
                                 <p style="font-size: 0.9rem; color: #666;">
                                     If requesting route changes, please select yes so we can confirm changes with you.
                                 </p>
 
+                                <!-- Yes option shows contact input -->
                                 <div class="radiobtn-midstate">
                                     <input asp-for="responseRequired"
                                            type="radio"
@@ -107,6 +116,7 @@
                                     <label for="responseRequest">Yes</label>
                                 </div>
 
+                                <!-- No option hides contact input -->
                                 <div class="radiobtn-midstate">
                                     <input asp-for="responseRequired"
                                            type="radio"
@@ -119,6 +129,7 @@
                         </div>
 
                         <!-- Contact Info -->
+                        <!-- Only shown if response is requested -->
                         <div class="form-group" id="contactInfoDiv" style="display:none;">
                             <label asp-for="Email">Email for Response</label>
                             <input asp-for="Email"
@@ -128,13 +139,15 @@
                             <div id="contactInfo-Validation-Message" class="text-danger"></div>
                         </div>
 
-                        <!-- Submit -->
+                        <!-- Submit buttons -->
                         <div class="form-group submit-group">
+                            <!-- Submit form -->
                             <button type="submit"
                                     class="btn-midstate btn-primary">
                                 Send
                             </button>
 
+                            <!-- Go back to previous page -->
                             <button type="button"
                                     class="btn-midstate btn-secondary"
                                     onclick="history.go(-1)">
@@ -153,19 +166,26 @@
 </body>
 
 <!-- Success Modal -->
+<!-- Displays after successful message submission -->
 <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
+                <!-- Modal title -->
                 <h5 class="modal-title" id="successModalLabel">Message Sent</h5>
+
+                <!-- Close button -->
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+
             <div class="modal-body">
                 Message Sent Successfully!
             </div>
+
             <div class="modal-footer">
+                <!-- Closes modal -->
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
             </div>
         </div>
@@ -174,12 +194,16 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
+        // Reads success flag from TempData
         var communicationSuccess = '@TempData["CommunicationSuccess"]';
+
+        // Shows modal if message was sent successfully
         if (communicationSuccess === 'True') {
             $('#successModal').modal('show');
         }
     });
 </script>
 
+<!-- JS for toggling emergency form and contact info -->
 <script src="~/js/Communication/StudentCommunicate.js"></script>
 <script src="~/js/Communication/contactInfo.js"></script>

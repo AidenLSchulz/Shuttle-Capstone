@@ -1,15 +1,18 @@
 ﻿@{
+    // Sets page title and uses shared admin layout
     ViewData["Title"] = "View Archives";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 @await Html.PartialAsync("~/Views/Shared/_DashboardNav.cshtml")
 
+<!-- Styles for dashboard and form layout -->
 <link rel="stylesheet" href="/css/DashBoardIndex.css" />
 <link rel="stylesheet" href="/css/Form.css" />
 <link rel="stylesheet" href="/css/Input.css" />
 
 <style>
+    /* Card styling for archive options */
     .archive-card {
         min-width: 280px;
         padding: 2.5rem 2rem;
@@ -20,17 +23,20 @@
         transition: box-shadow 0.2s, transform 0.2s;
     }
 
+        /* Hover effect for cards */
         .archive-card:hover {
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
             transform: translateY(-3px);
         }
 
+    /* Icon styling */
     .archive-icon {
         color: #7a1f2b; /* maroon */
         font-size: 2.5rem;
         margin-bottom: 0.75rem;
     }
 
+    /* Title styling */
     .archive-card h5 {
         color: #7a1f2b;
         font-weight: 600;
@@ -38,15 +44,18 @@
 </style>
 
 <body>
+    <!-- Main dashboard container -->
     <div class="dashboard-landing tiled-background-2">
         <div class="form-container tiled-background-2">
             <div class="form-paper">
 
+                <!-- Page header -->
                 <div class="section-header">
                     <h2 class="mb-0">View Archives</h2>
                     <p class="text-muted mb-0">Browse archived records across all categories.</p>
                 </div>
 
+                <!-- Grid of archive categories -->
                 <div class="row g-4">
 
                     <!-- Requests -->
@@ -56,6 +65,7 @@
                             <h5>Requests</h5>
                             <p>View all archived registration requests.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived requests -->
                                 <a asp-controller="Register" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -71,6 +81,7 @@
                             <h5>Routes</h5>
                             <p>View all archived shuttle routes.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived routes -->
                                 <a asp-controller="Routes" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -86,6 +97,7 @@
                             <h5>Shuttles</h5>
                             <p>View all archived shuttle vehicles.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived shuttles -->
                                 <a asp-controller="Shuttles" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -101,6 +113,7 @@
                             <h5>Drivers</h5>
                             <p>View all archived driver records.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived drivers -->
                                 <a asp-controller="Driver" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -116,6 +129,7 @@
                             <h5>Check Ins</h5>
                             <p>View all archived check-ins.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived check-ins -->
                                 <a asp-controller="CheckIn" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -131,6 +145,7 @@
                             <h5>Locations</h5>
                             <p>View all archived locations.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived locations -->
                                 <a asp-controller="Location" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
@@ -146,6 +161,7 @@
                             <h5>Messages</h5>
                             <p>View all archived messages.</p>
                             <div class="archive-btn-wrapper">
+                                <!-- Navigates to archived messages -->
                                 <a asp-controller="Communicate" asp-action="ViewAll" asp-route-viewArchived="true"
                                    class="btn btn-midstate">
                                     <i class="bi bi-archive-fill me-1"></i> View Archived
