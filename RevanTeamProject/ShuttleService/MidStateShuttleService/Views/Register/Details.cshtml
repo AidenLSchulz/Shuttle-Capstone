@@ -16,7 +16,7 @@
 <div class="form-container tiled-background-1">
     <div class="form-paper">
 
-        <h2>Edit Registration</h2>
+        <h2>Registration For @Model.Name</h2>
 
         @using (Html.BeginForm("EditSave", "Register", FormMethod.Post, new { id = "registrationForm" }))
         {
@@ -46,20 +46,6 @@
             </select>
         </div>
 
-        <!-- ADD DAY -->
-        <div class="form-group">
-            <button type="button"
-                    class="btn-midstate btn-primary"
-                    id="addDayBtn">
-                Add Day +
-            </button>
-
-            <span class="help-icon"
-                  data-help="Add a day and schedule rides for it.">
-                ?
-            </span>
-        </div>
-
         <!-- SPECIAL REQUEST CHECKBOX -->
         <div class="form-group terms-group">
             <div class="checkbox-midstate">
@@ -77,6 +63,20 @@
             @Html.TextAreaFor(m => m.customMessage,
                         5, 50,
                         new { @class = "midstate-textinput", placeholder = "Enter additional details..." })
+        </div>
+
+        <!-- ADD DAY -->
+        <div class="form-group">
+            <button type="button"
+                    class="btn-midstate btn-primary"
+                    id="addDayBtn">
+                Add Day +
+            </button>
+
+            <span class="help-icon"
+                  data-help="Add a day and schedule rides for it.">
+                ?
+            </span>
         </div>
 
         <!-- DAY CARDS -->
@@ -229,22 +229,21 @@
                                                 </select>
                                             </div>
 
-                                            <!-- Hot SHortcut To Create Route -->
+                                            <!-- Hot Shortcut To Create Route -->
                                             @if (ride.RouteId == null || ride.RouteId == 0)
                                             {
                                                 <div class="mt-2">
-                                                <a href="@Url.Action("CreateFromRide", "Routes", new { rideId = ride.RideId })"
-                                                   class="btn-midstate btn-warning">
-                                                    + Create Route From This Ride Request
-                                                </a>
+                                                    <a href="@Url.Action("CreateFromRide", "Routes", new { rideId = ride.RideId })"
+                                                       class="btn-midstate btn-warning w-100 d-flex align-items-center justify-content-center">
+                                                        + Create Route From This Ride Request
+                                                    </a>
                                                 </div>
                                             }
-                                            
 
                                             <!-- REMOVE -->
-                                            <div>
+                                            <div class="mt-2">
                                                 <button type="button"
-                                                        class="btn-midstate btn-danger removeRideBtn w-100">
+                                                        class="btn-midstate btn-danger w-100 removeRideBtn">
                                                     Remove Ride
                                                 </button>
                                             </div>
