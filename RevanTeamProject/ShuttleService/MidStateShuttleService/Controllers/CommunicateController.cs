@@ -215,7 +215,7 @@ namespace MidStateShuttleService.Controllers
 
                     // Build and dispatch an internal admin notification alerting staff to the new student message.
                     Notification notif = new Notification();
-                    notif.Subject = "Shuttle Service Review!";
+                    notif.Subject = "New Message!";
                     notif.Body = c.name + " Sent a message!";
                     notif.TimeSent = DateTime.Now;
                     notif.MessageId = c.id;

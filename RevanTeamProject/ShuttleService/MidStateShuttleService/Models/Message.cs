@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MidStateShuttleService.Models
 {
+    //THIS MODEL IS FOR STUDENTS
     [Table("Message")]
     public partial class Message
     {
@@ -24,10 +25,7 @@ namespace MidStateShuttleService.Models
         [DefaultValue(false)]
         public bool responseRequired { get; set; }
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
-        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         public bool IsActive { get; set; }
     }
